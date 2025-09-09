@@ -1,6 +1,6 @@
 # backend/models/user_model.py
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 import datetime
 
 class UserRegister(BaseModel):
@@ -20,3 +20,21 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
     created_at: datetime.datetime
+
+class UserBase(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+class UserSignup(UserBase):
+    role: str  # "student", "club", "admin"
+
+class UserOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+
+# Optional: For student profile creation
+class StudentSignup(UserSignup):
+    pass

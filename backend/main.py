@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.auth_middleware import get_current_user, require_role
-from routes import auth_routes, event_routes, club_routes,registration_routes
+from routes import auth_routes, event_routes, club_routes,registration_routes, student_routes 
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
@@ -19,6 +19,7 @@ app.include_router(auth_routes.router)
 app.include_router(event_routes.router)
 app.include_router(club_routes.router)
 app.include_router(registration_routes.router)
+app.include_router(student_routes.router)
 
 @app.get("/")
 async def root():

@@ -3,9 +3,13 @@ from bson import ObjectId
 from datetime import datetime
 from fastapi import HTTPException
 from config.db import db
-from models.club_model import ClubIn, ClubOut
+from models.club_model import ClubIn, ClubOut,JoinClubApplication, CreateClubApplication
+from controllers import student_controller
+from bson.errors import InvalidId
 
 COLLECTION = "clubs"
+COLLECTION_JOIN = "club_join_applications"
+COLLECTION_CREATE = "club_create_applications"
 
 def serialize_club(club) -> dict:
     return {
@@ -73,3 +77,48 @@ async def leave_club(club_id: str, user_id: str):
     )
     updated_club = await db[COLLECTION].find_one({"_id": ObjectId(club_id)})
     return serialize_club(updated_club)
+
+async def apply_join_club(application: JoinClubApplication, user_id: str):
+    try:
+        user_oid = ObjectId(user_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    await check_student_profile(user_id)
+    app_data = application.dict()
+    app_data["user_id"] = user_oid
+    result = await db[COLLECTION_JOIN].insert_one(app_data)
+    app = await db[COLLECTION_JOIN].find_one({"_id": result.inserted_id})
+    app["id"] = str(app["_id"])
+    return app
+
+async def apply_create_club(application: CreateClubApplication, user_id: str):
+    app_data = application.dict()
+    app_data["user_id"] = ObjectId(user_id)
+    result = await db[COLLECTION_CREATE].insert_one(app_data)
+    app = await db[COLLECTION_CREATE].find_one({"_id": result.inserted_id})
+    app["id"] = str(app["_id"])
+    return app
+
+async def check_student_profile(user_id: str):
+    completed = await student_controller.is_profile_completed(user_id)
+    if not completed:
+        raise HTTPException(status_code=400, detail="Complete student profile before applying")
+    
+async def apply_join_club(application: JoinClubApplication, user_id: str):
+    await check_student_profile(user_id)
+    app_data = application.dict()
+    app_data["user_id"] = ObjectId(user_id)
+    result = await db[COLLECTION_JOIN].insert_one(app_data)
+    app = await db[COLLECTION_JOIN].find_one({"_id": result.inserted_id})
+    app["id"] = str(app["_id"])
+    return app
+
+async def apply_create_club(application: CreateClubApplication, user_id: str):
+    await check_student_profile(user_id)  # <-- new check
+    app_data = application.dict()
+    app_data["user_id"] = ObjectId(user_id)
+    result = await db[COLLECTION_CREATE].insert_one(app_data)
+    app = await db[COLLECTION_CREATE].find_one({"_id": result.inserted_id})
+    app["id"] = str(app["_id"])
+    return app
