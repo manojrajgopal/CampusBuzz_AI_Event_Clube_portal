@@ -1,4 +1,3 @@
-# backend/models/student_model.py
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -9,9 +8,9 @@ class StudentProfileIn(BaseModel):
     student_id: str
     department: str
     year: str
-    skills: List[str] = []
-    interests: List[str] = []
-    achievements: List[str] = []
+    skills: List[str] = Field(default_factory=list)
+    interests: List[str] = Field(default_factory=list)
+    achievements: List[str] = Field(default_factory=list)
     description: Optional[str] = None
 
 class StudentProfileOut(StudentProfileIn):

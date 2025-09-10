@@ -1,4 +1,3 @@
-# backend/models/event_model.py
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -9,9 +8,9 @@ class EventIn(BaseModel):
     date: datetime = Field(..., example="2025-09-10T10:00:00")
     venue: str = Field(..., example="Auditorium Hall")
     tags: Optional[List[str]] = []
-    poster: Optional[str] = None  # URL of image (later Cloudinary/S3)
+    poster: Optional[str] = None
     isPaid: bool = False
-    clubId: Optional[str] = None  # organizer/club reference
+    clubId: Optional[str] = None
 
 class EventOut(BaseModel):
     id: str

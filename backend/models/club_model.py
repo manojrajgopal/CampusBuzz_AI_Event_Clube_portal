@@ -1,5 +1,5 @@
 # backend/models/club_model.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -45,3 +45,12 @@ class CreateClubApplication(BaseModel):
     subleader_interests: List[str] = []
     subleader_achievements: List[str] = []
     subleader_description: Optional[str] = None
+
+class TeacherIn(BaseModel):
+    name: str
+    email: EmailStr
+    mobile: str
+    club_id: str
+
+class TeacherOut(TeacherIn):
+    id: str

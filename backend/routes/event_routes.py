@@ -1,4 +1,3 @@
-# backend/routes/event_routes.py
 from fastapi import APIRouter, Depends
 from typing import List
 
@@ -31,11 +30,15 @@ async def update_event(
     event_in: EventIn,
     user=Depends(require_role(["club", "admin"]))
 ):
-    return await event_controller.update_event(event_id, event_in, user["_id"])
+    return await event_controller.update_event(
+        event_id, event_in, user_id=user["_id"], user_role=user["role"]
+    )
 
 @router.delete("/{event_id}")
 async def delete_event(
     event_id: str,
     user=Depends(require_role(["club", "admin"]))
 ):
-    return await event_controller.delete_event(event_id, user["_id"])
+    return await event_controller.delete_event(
+        event_id, user_id=user["_id"], user_role=user["role"]
+    )

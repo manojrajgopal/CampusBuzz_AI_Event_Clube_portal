@@ -1,12 +1,13 @@
-# backend/main.py
 import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.auth_middleware import get_current_user, require_role
-from routes import auth_routes, event_routes, club_routes,registration_routes, student_routes 
+from routes import auth_routes, event_routes, club_routes, registration_routes, student_routes
+from config.startup import register_startup_events  # Import startup tasks
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
+# --- CORS middleware ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # in production, restrict origins
@@ -15,24 +16,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Include routers ---
 app.include_router(auth_routes.router)
 app.include_router(event_routes.router)
 app.include_router(club_routes.router)
 app.include_router(registration_routes.router)
 app.include_router(student_routes.router)
 
+# --- Root endpoint ---
 @app.get("/")
 async def root():
     return {"message": "CampusBuzz backend running. Hit /docs for API docs."}
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
+# --- User profile endpoint ---
 @app.get("/api/me")
 async def get_profile(user=Depends(get_current_user)):
     return {"message": "Your profile", "user": user}
 
+# --- Admin only endpoint ---
 @app.get("/api/admin-only")
 async def admin_area(user=Depends(require_role(["admin"]))):
     return {"message": "Welcome admin", "user": user}
 
+# --- Register startup tasks (Mongo ping + default admin creation) ---
+register_startup_events(app)
+
+# --- Run server ---
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
