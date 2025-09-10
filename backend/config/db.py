@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
 # Load .env.example instead of .env
-load_dotenv(".env.example")
+load_dotenv()
 
 # Extract MongoDB settings
 MONGODB_URI = os.getenv("MONGODB_URI")
