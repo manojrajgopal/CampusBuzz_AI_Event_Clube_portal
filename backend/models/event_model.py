@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field
+# backend/models/event_model.py
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime
+ 
+# ---- Event Models ----
 
 class EventIn(BaseModel):
     title: str = Field(..., example="AI Workshop")
@@ -23,3 +26,26 @@ class EventOut(BaseModel):
     isPaid: bool
     clubId: Optional[str]
     created_at: datetime
+
+# ---- Registration Models ----
+
+class RegistrationIn(BaseModel):
+    event_id: str = Field(..., example="64f3a1c2e4a1b2c3d4e5f6b1")
+
+class RegistrationOut(BaseModel):
+    id: str
+    event_id: str
+    user_id: str
+    qr_code: str   # base64 image string
+    checked_in: bool = False
+
+
+
+class TeacherIn(BaseModel):
+    name: str
+    mobile: str
+    email: EmailStr
+    club_id: str   # club assigned to
+
+class TeacherOut(TeacherIn):
+    id: str

@@ -1,4 +1,4 @@
-# backend/models/club_model.py
+# club_model.py
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
@@ -24,26 +24,27 @@ class JoinClubApplication(BaseModel):
     description: Optional[str] = None
 
 class CreateClubApplication(BaseModel):
+    # New fields for club
+    club_name: str = Field(..., min_length=3, max_length=50)
+    club_email: EmailStr
+    club_password: str = Field(..., min_length=6)
+
+    # Leader details
     leader_name: str
     leader_email: str
     leader_mobile: str
     leader_student_id: str
     leader_department: str
     leader_year: Optional[str] = None
-    leader_skills: List[str] = []
-    leader_interests: List[str] = []
-    leader_achievements: List[str] = []
     leader_description: Optional[str] = None
 
+    # Sub-leader details
     subleader_name: str
     subleader_email: str
     subleader_mobile: str
     subleader_student_id: str
     subleader_department: str
     subleader_year: Optional[str] = None
-    subleader_skills: List[str] = []
-    subleader_interests: List[str] = []
-    subleader_achievements: List[str] = []
     subleader_description: Optional[str] = None
 
 class TeacherIn(BaseModel):

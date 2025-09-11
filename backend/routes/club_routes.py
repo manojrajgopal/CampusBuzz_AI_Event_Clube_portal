@@ -1,7 +1,10 @@
+# backend/routes/club_routes.py
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from bson import ObjectId
 from datetime import datetime
+from passlib.context import CryptContext
+
 from models.club_model import (
     ClubIn,
     ClubOut,
@@ -15,7 +18,18 @@ from config.db import db
 from utils.mongo_utils import sanitize_doc
 from utils.id_util import normalize_id
 
+
+
 router = APIRouter(prefix="/api/clubs", tags=["clubs"])
+
+# ----------------- Collections & Password -----------------
+COLLECTION = "clubs"
+COLLECTION_JOIN = "club_join_applications"
+COLLECTION_CREATE = "club_create_applications"
+COLLECTION_TEACHERS = "teachers"
+USERS_COLLECTION = "users"
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ----------------- Helpers -----------------
 def validate_object_id(id_str: str) -> ObjectId:
@@ -44,11 +58,6 @@ async def check_student_profile(user_id: str):
 
 
 # ----------------- Core Club Functions -----------------
-COLLECTION = "clubs"
-COLLECTION_JOIN = "club_join_applications"
-COLLECTION_CREATE = "club_create_applications"
-COLLECTION_TEACHERS = "teachers"
-
 async def list_clubs():
     clubs = await db[COLLECTION].find({"approved": True}).to_list(100)
     result = []
@@ -169,22 +178,46 @@ async def approve_club_application(application_id: str, admin_id: str):
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
 
+    # --- Create club user in USERS_COLLECTION for login ---
+    existing = await db[USERS_COLLECTION].find_one({"email": app["club_email"]})
+    if existing:
+        raise HTTPException(status_code=400, detail="Club email already in use")
+
+    password_hash = pwd_context.hash(app["club_password"])
+
+    club_user_doc = {
+        "name": app["club_name"],
+        "email": app["club_email"],
+        "password_hash": password_hash,
+        "role": "club",
+        "created_at": datetime.utcnow(),
+    }
+    result_user = await db[USERS_COLLECTION].insert_one(club_user_doc)
+    club_user_id = result_user.inserted_id
+
+    # --- Create the club in clubs collection ---
     club_doc = {
-        "name": f"{app.get('leader_name', 'Unnamed')}'s Club",
-        "leader_id": app["user_id"],
+        "name": app.get("club_name"),
+        "email": app.get("club_email"),
+        "password": app.get("club_password"),
+        "leader_id": normalize_id(app["user_id"]),
         "subleader": {
             "name": app.get("subleader_name", ""),
             "email": app.get("subleader_email", "")
         },
-        "created_at": app.get("created_at", datetime.utcnow()),
+        "created_at": datetime.utcnow(),
         "approved": True,
-        "members": [app["user_id"]],
-        "created_by": admin_id,
+        "members": [normalize_id(app["user_id"])],
+        "created_by": normalize_id(admin_id),
     }
 
+    # Insert into clubs collection
     await db[COLLECTION].insert_one(club_doc)
+
+    # Remove the original application
     await db[COLLECTION_CREATE].delete_one({"_id": normalize_id(application_id)})
-    return {"message": "✅ Club approved successfully"}
+
+    return {"message": "✅ Club approved successfully", "club_user_id": str(club_user_id)}
 
 
 async def reject_club_application(app_id: str):
