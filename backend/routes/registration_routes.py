@@ -1,3 +1,4 @@
+# reegistration_routers
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from bson import ObjectId
@@ -6,6 +7,8 @@ from models.registration_model import RegistrationOut
 from middleware.auth_middleware import require_role, get_current_user
 from config.db import db
 from utils.qrcode_util import generate_qr_code
+from .student_routes import is_profile_completed
+
 
 router = APIRouter(prefix="/api/registrations", tags=["registrations"])
 
@@ -69,13 +72,16 @@ async def list_registrations(user_id: str):
 # ----------------- Routes -----------------
 @router.post("/register", response_model=RegistrationOut)
 async def register_for_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    # Check if student profile is completed
+    completed = await is_profile_completed(current_user["_id"])
+    if not completed:
+        raise HTTPException(status_code=400, detail="Complete your student profile before registering for events")
     try:
         return await register_event(event_id, current_user["_id"])
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/{registration_id}/checkin", response_model=RegistrationOut)
 async def check_in(registration_id: str, user=Depends(require_role(["student", "club", "admin"]))):

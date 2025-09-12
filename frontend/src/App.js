@@ -1,25 +1,63 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import StudentAuth from "./pages/StudentAuth";
+import StudentProfile from "./pages/StudentProfile";
+import ClubForms from "./pages/ClubForms";
+import Events from "./pages/Events";
+import AdminDashboard from "./pages/AdminDashboard";
+import Blogs from "./pages/Blogs";
+import ClubLogin from "./pages/ClubLogin";
+import AdminLogin from "./pages/AdminLogin";
+import StudentEvents from "./pages/StudentEvents";
+import EventParticipants from "./pages/EventParticipants";
 
-function App() {
+
+function AppWrapper() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role === "student") navigate("/");
+    else if (role === "club") navigate("/clubs");
+    else if (role === "admin") navigate("/admin");
+  }, [navigate]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Navbar />
+      <Routes>
+        {/* General */}
+        <Route path="/" element={<Home />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/blogs" element={<Blogs />} />
+
+        {/* Student */}
+        <Route path="/student/login" element={<StudentAuth />} />
+        <Route path="/student/profile" element={<StudentProfile />} />
+
+        {/* Club */}
+        <Route path="/clubs" element={<ClubForms />} />
+        <Route path="/club/login" element={<ClubLogin />} />
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        // Add Routes
+        <Route path="/student/events" element={<StudentEvents />} />
+        <Route path="/events/:eventId/participants" element={<EventParticipants />} />
+
+      </Routes>
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <AppWrapper />
+    </Router>
+  );
+}

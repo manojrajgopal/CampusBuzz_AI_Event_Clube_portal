@@ -6,9 +6,11 @@ from routes import (auth_routes,
                     event_routes,
                       club_routes, 
                       registration_routes, 
-                      student_routes )
+                      student_routes)
 
 from config.startup import register_startup_events  # Import startup tasks
+from routes.blog_routes import router as blog_router
+
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
@@ -27,9 +29,11 @@ app.include_router(event_routes.router)
 app.include_router(club_routes.router)
 app.include_router(registration_routes.router)
 app.include_router(student_routes.router)
+app.include_router(blog_router)
 
 
-# --- Root endpoint ---
+
+# --- Root endpoint --
 @app.get("/")
 async def root():
     return {"message": "CampusBuzz backend running. Hit /docs for API docs."}

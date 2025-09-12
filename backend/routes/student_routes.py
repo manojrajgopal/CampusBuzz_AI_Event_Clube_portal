@@ -1,3 +1,4 @@
+# student_routes.py
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
 from config.db import db

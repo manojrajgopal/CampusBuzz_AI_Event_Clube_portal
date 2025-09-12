@@ -1,5 +1,4 @@
-# backend/routes/auth_routes.py
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from passlib.context import CryptContext
 from datetime import datetime
 from config.db import db
@@ -16,7 +15,7 @@ USERS_COLLECTION = "users"
 # ------------------ HELPERS ------------------
 def serialize_user(user):
     return {
-        "user_id": str(user["_id"]),  # always string for frontend
+        "user_id": str(user["_id"]),
         "name": user["name"],
         "email": user["email"],
         "role": user["role"],
@@ -24,97 +23,77 @@ def serialize_user(user):
     }
 
 async def register_user(data):
-    if data.role not in ["student", "admin", "club"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid role"
-        )
-
     existing = await db[USERS_COLLECTION].find_one({"email": data.email})
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     password_hash = pwd_context.hash(data.password)
-
     user_doc = {
         "name": data.name,
         "email": data.email,
         "password_hash": password_hash,
-        "role": data.role,
-        "skills": [],
-        "interests": [],
+        "role": "student",  # 👈 only students can sign up
         "created_at": datetime.utcnow()
     }
 
-    try:
-        result = await db[USERS_COLLECTION].insert_one(user_doc)
-        user_doc["_id"] = normalize_id(result.inserted_id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating user: {str(e)}"
-        )
-
+    result = await db[USERS_COLLECTION].insert_one(user_doc)
+    user_doc["_id"] = normalize_id(result.inserted_id)
     return serialize_user(user_doc)
 
-async def authenticate_user(email: str, password: str):
-    user = await db[USERS_COLLECTION].find_one({"email": email})
+async def authenticate_user(email: str, password: str, role: str):
+    user = await db[USERS_COLLECTION].find_one({"email": email, "role": role})
     if not user:
         return None
     if not pwd_context.verify(password, user["password_hash"]):
         return None
     return user
 
+def make_token(user):
+    user_id = str(user["_id"])
+    role = user["role"]
+    token = create_access_token({"user_id": user_id, "role": role})
+    return token
+
 # ------------------ ROUTES ------------------
-@router.post("/register")
-async def register(data: UserRegister):
-    try:
-        user_data = await register_user(data)
-        return {"message": "User registered successfully", "user_id": user_data}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        print("❌ Error in register:", e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
 
+# Student Signup
+@router.post("/student/signup")
+async def student_signup(data: UserRegister):
+    user = await register_user(data)
+    return {"message": "Student registered successfully", "user": user}
 
-@router.post("/login")
-async def login(data: UserLogin):
-    try:
-        user = await authenticate_user(data.email, data.password)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
-            )
+# Student Login
+@router.post("/student/login")
+async def student_login(data: UserLogin):
+    user = await authenticate_user(data.email, data.password, "student")
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        user_id = str(user.get("_id") or user.get("id"))
-        role = user.get("role")
+    token = make_token(user)
+    first_time = not await db["student_profiles"].find_one({"user_id": user["_id"]})
 
-        access_token = create_access_token({
-            "user_id": user_id,
-            "role": role
-        })
+    return {
+        "access_token": token,
+        "role": "student",
+        "first_time": first_time
+    }
 
-        # --- First-time student profile check ---
-        first_time = False
-        if role == "student":
-            profile = await db["student_profiles"].find_one({"user_id": ObjectId(user_id)})
-            if not profile:
-                first_time = True
+# Club Login
+@router.post("/club/login")
+async def club_login(data: UserLogin):
+    user = await authenticate_user(data.email, data.password, "club")
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "role": role,
-            "first_time": first_time
-        }
+    token = make_token(user)
+    return {"access_token": token, "role": "club"}
 
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+# Admin Login
+@router.post("/admin/login")
+async def admin_login(data: UserLogin):
+    user = await authenticate_user(data.email, data.password, "admin")
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = make_token(user)
+    return {"access_token": token, "role": "admin"}

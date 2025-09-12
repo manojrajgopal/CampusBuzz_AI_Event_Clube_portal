@@ -142,7 +142,11 @@ async def leave_club(club_id: str, user_id: str):
 
 # ----------------- Applications -----------------
 async def apply_join_club(application: JoinClubApplication, user_id: str):
-    await check_student_profile(user_id)
+    # check student profile
+    completed = await is_profile_completed(user_id)
+    if not completed:
+        raise HTTPException(status_code=400, detail="Complete your student profile before applying")
+    
     app_data = application.dict()
     app_data["user_id"] = normalize_id(user_id)
     result = await db[COLLECTION_JOIN].insert_one(app_data)
