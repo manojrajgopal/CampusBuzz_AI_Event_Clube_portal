@@ -10,7 +10,7 @@ export default function Events() {
 
   async function register(eventId) {
     try {
-      await API.post("/events/register", { event_id: eventId });
+      await API.post(`/events/${eventId}/register`, { event_id: eventId });
       alert("Registered successfully!");
     } catch {
       alert("Registration failed");

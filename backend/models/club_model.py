@@ -47,11 +47,12 @@ class CreateClubApplication(BaseModel):
     subleader_year: Optional[str] = None
     subleader_description: Optional[str] = None
 
+
 class TeacherIn(BaseModel):
     name: str
-    email: EmailStr
     mobile: str
-    club_id: str
+    email: EmailStr
+    club_id: str   # club assigned to
 
 class TeacherOut(TeacherIn):
     id: str

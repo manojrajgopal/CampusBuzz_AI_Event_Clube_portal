@@ -22,7 +22,7 @@ export default function Navbar() {
           setProfile(res.data);
           setFormData(res.data);
         } catch (err) {
-          console.log("Profile not found yet");
+
         }
       }
     }

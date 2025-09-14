@@ -15,8 +15,8 @@ export default function ClubLogin() {
       const res = await API.post("/auth/club/login", form);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", "club");
-      localStorage.setItem("club_id", res.data.club_id); // ✅ Add this
-      alert("Login successful!");
+      let club_id = localStorage.setItem("club_id", res.data.club_id); // ✅ Add this
+      alert("Login successful!", club_id);
       navigate("/clubs"); // ✅ redirect to club page
     } catch (err) {
       alert("Login failed");

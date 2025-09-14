@@ -17,7 +17,7 @@ export default function EventParticipants() {
       });
       setParticipants(res.data);
     } catch (err) {
-      console.log(err);
+      
     }
   }
 

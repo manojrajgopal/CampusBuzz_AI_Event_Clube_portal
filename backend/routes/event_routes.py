@@ -1,20 +1,19 @@
 # backend/routes/event_routes.py
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Optional
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
 import qrcode, io, base64
 
 from config.db import db
-from models.event_model import EventIn, EventOut, RegistrationOut, TeacherIn, TeacherOut
+from models.event_model import EventIn, EventOut, RegistrationOut
 from middleware.auth_middleware import require_role
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
 COLLECTION_EVENTS = "events"
 COLLECTION_REGISTRATIONS = "event_registrations"
-COLLECTION_TEACHERS = "teachers"
 
 # ----------------- Helpers -----------------
 def serialize_event(event) -> dict:
@@ -40,15 +39,6 @@ def serialize_registration(reg) -> dict:
         "user_id": str(reg["user_id"]),
         "qr_code": reg["qr_code"],
         "checked_in": reg.get("checked_in", False),
-    }
-
-def serialize_teacher(t) -> dict:
-    return {
-        "id": str(t["_id"]),
-        "name": t["name"],
-        "mobile": t["mobile"],
-        "email": t["email"],
-        "club_id": str(t["club_id"]) if t.get("club_id") else None,
     }
 
 # ----------------- Event Functions -----------------
@@ -160,22 +150,10 @@ async def checkin_registration(registration_id: str):
     reg["checked_in"] = True
     return serialize_registration(reg)
 
-# ----------------- Teacher Functions -----------------
-async def add_teacher(teacher_in: TeacherIn):
-    teacher = teacher_in.dict()
-    teacher["club_id"] = ObjectId(teacher["club_id"])
-    result = await db[COLLECTION_TEACHERS].insert_one(teacher)
-    new_teacher = await db[COLLECTION_TEACHERS].find_one({"_id": result.inserted_id})
-    return serialize_teacher(new_teacher)
-
-async def list_teachers_by_club(club_id: str):
-    teachers = await db[COLLECTION_TEACHERS].find({"club_id": ObjectId(club_id)}).to_list(50)
-    return [serialize_teacher(t) for t in teachers]
-
 # ----------------- Routes -----------------
 # Event CRUD
 @router.get("/", response_model=List[EventOut])
-async def get_events_route():
+async def get_events_route(clubId: Optional[str] = Query(None)):
     return await list_events()
 
 @router.get("/{event_id}", response_model=EventOut)
@@ -202,15 +180,6 @@ async def register_event_route(event_id: str, user=Depends(require_role(["studen
 @router.post("/checkin/{registration_id}", response_model=RegistrationOut)
 async def checkin_route(registration_id: str, user=Depends(require_role(["club","admin"]))):
     return await checkin_registration(registration_id)
-
-# Teacher Management
-@router.post("/teachers", response_model=TeacherOut)
-async def add_teacher_route(teacher: TeacherIn, user=Depends(require_role(["admin","club"]))):
-    return await add_teacher(teacher)
-
-@router.get("/teachers/{club_id}", response_model=List[TeacherOut])
-async def get_club_teachers(club_id: str):
-    return await list_teachers_by_club(club_id)
 
 # Event Participants
 @router.get("/{event_id}/participants", response_model=List[RegistrationOut])

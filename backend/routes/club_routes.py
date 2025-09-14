@@ -46,10 +46,12 @@ def serialize_club(club) -> dict:
         "description": club.get("description", ""),
         "created_by": str(club["created_by"]),
         "members": [str(m) for m in club.get("members", [])],
-        "created_at": club["created_at"],
+        "created_at": club["created_at"].isoformat(),
         "approved": club.get("approved", False),
+        "email": club.get("email", ""),
+        "leader_id": str(club.get("leader_id", "")),
+        "subleader": club.get("subleader", {}),
     }
-
 
 async def check_student_profile(user_id: str):
     completed = await student_controller.is_profile_completed(user_id)
@@ -67,15 +69,37 @@ async def list_clubs():
         result.append(serialized)
     return result
 
-
+@router.get("/{club_id}", response_model=ClubOut)
 async def get_club(club_id: str):
-    club = await db[COLLECTION].find_one({"_id": normalize_id(club_id)})
-    if not club:
-        raise HTTPException(status_code=404, detail="Club not found")
-    serialized = serialize_club(club)
-    serialized["teachers"] = await list_teachers_by_club(serialized["id"])
-    return serialized
+    try:
 
+        club = await db.clubs.find_one({"_id": ObjectId(club_id)})
+
+        if not club:
+
+            raise HTTPException(status_code=404, detail="Club not found")
+        
+        club = sanitize_doc(club)
+        try:
+            club["teachers"] = await db.teachers.find({"club_id": ObjectId(club_id)}, {"_id": 0, "name": 1, "email": 1, "mobile": 1}).to_list(None)
+            
+        except Exception as e:
+      
+            club["teachers"] = []
+
+        # Map Mongo fields to Pydantic fields
+        club["id"] = club.pop("_id")   # ✅ Pydantic expects `id`
+        club["description"] = club.get("description", "No description provided")  # ✅ Ensure description
+        club["members"] = [str(m) for m in club.get("members", [])]  # ✅ Convert ObjectIds to strings
+        club["created_by"] = str(club.get("created_by", "unknown"))
+        club["leader"] = await db.users.find_one({"_id": ObjectId(club.get("leader_id"))}, {"_id": 0, "name": 1, "email": 1, "mobile": 1}) if club.get("leader_id") else None
+        club["created_at"] = club.get("created_at") or datetime.utcnow()
+        print(club)
+        return ClubOut(**club)
+
+    except Exception as e:
+        print("Error in get_club:", str(e))
+        raise HTTPException(status_code=400, detail="Invalid club ID")
 
 async def create_club(club_in: ClubIn, created_by: str):
     club_data = club_in.dict()
@@ -233,6 +257,7 @@ async def reject_club_application(app_id: str):
 
 
 # ----------------- Teachers -----------------
+# ----------------- Teachers -----------------
 async def add_teacher(teacher: dict):
     if not all(k in teacher for k in ["name", "mobile", "email", "club_id"]):
         raise HTTPException(status_code=400, detail="Missing teacher fields")
@@ -255,11 +280,21 @@ async def list_teachers_by_club(club_id: str):
 
 
 # ----------------- Routes -----------------
-# Public Routes
-@router.get("/", response_model=List[ClubOut])
-async def get_clubs():
-    return await list_clubs()
+@router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
+async def add_teacher_route(teacher: TeacherIn):
+    return await add_teacher(teacher.dict())
 
+
+@router.get("/{club_id}/teachers", response_model=List[TeacherOut])
+async def get_club_teachers_route(club_id: str):
+    return await list_teachers_by_club(str(validate_object_id(club_id)))
+
+
+# ----------------- Routes -----------------
+# Public Routes
+@router.get("/{club_id}", response_model=ClubOut)
+async def get_club_route(club_id: str):
+    return await get_club(str(validate_object_id(club_id)))
 
 # Student Applications
 @router.post("/apply/join")

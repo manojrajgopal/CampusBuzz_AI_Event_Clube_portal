@@ -37,8 +37,15 @@ export default function Home() {
   }, [role]);
 
   // Dummy event registration function
-  function registerEvent(eventId) {
-    alert(`Registered for event ID: ${eventId}`);
+  async function registerEvent(eventId) {
+    try {
+      await API.post(`/events/${eventId}/register`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      alert("Registered successfully!");
+    } catch (err) {
+      alert(err.response?.data?.detail || "Error registering");
+    }
   }
 
   return (
@@ -99,20 +106,14 @@ export default function Home() {
       <section style={{ marginBottom: "40px" }}>
         <h2>Upcoming Events</h2>
         {events.length > 0 ? (
-          events.map((event) => (
-            <div key={event._id} style={{ border: "1px solid #ccc", margin: "5px", padding: "10px" }}>
-              <h3>{event.title}</h3>
-              <p>{event.description}</p>
-              <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
-
-              {/* Event registration */}
-              {role === "student" ? (
-                profile ? (
-                  <button onClick={() => registerEvent(event._id)}>Register</button>
-                ) : (
-                  <p>Please complete your profile to register</p>
-                )
-              ) : null}
+          events.map((e) => (
+            <div key={e.id} style={{ border: "1px solid #ccc", margin: "10px", padding: "10px" }}>
+              <h3>{e.title}</h3>
+              <p>{e.description}</p>
+              <p>Date: {new Date(e.date).toLocaleString()}</p>
+              {
+                <button onClick={() => registerEvent(e.id)}>Register</button>
+              }
             </div>
           ))
         ) : (

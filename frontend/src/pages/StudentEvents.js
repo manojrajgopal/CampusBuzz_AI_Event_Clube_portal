@@ -15,7 +15,7 @@ export default function StudentEvents() {
       const res = await API.get("/events");
       setEvents(res.data);
     } catch (err) {
-      console.log(err);
+
     }
   }
 
@@ -27,7 +27,7 @@ export default function StudentEvents() {
       const registeredIds = res.data.map((r) => r.event_id);
       setRegisteredEvents(registeredIds);
     } catch (err) {
-      console.log(err);
+
     }
   }
 

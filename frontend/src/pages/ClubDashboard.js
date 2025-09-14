@@ -21,7 +21,7 @@ export default function ClubDashboard() {
     fetchClub();
   }, [id]);
 
-  if (loading) return <p>Loading club info...</p>;
+  if (loading) return <p>Loading club </p>;
   if (!club) return <p>Club not found</p>;
 
   return (

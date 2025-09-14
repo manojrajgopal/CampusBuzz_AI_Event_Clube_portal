@@ -46,6 +46,7 @@ async def authenticate_user(email: str, password: str, role: str):
         return None
     if not pwd_context.verify(password, user["password_hash"]):
         return None
+    print("Authenticated user:", user)  # Debugging line
     return user
 
 def make_token(user):
@@ -79,14 +80,25 @@ async def student_login(data: UserLogin):
     }
 
 # Club Login
+# Club Login
 @router.post("/club/login")
 async def club_login(data: UserLogin):
-    user = await authenticate_user(data.email, data.password, "club")
-    if not user:
+    # Find club by email only (no role check)
+    club = await db["clubs"].find_one({"email": data.email})
+    if not club:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = make_token(user)
-    return {"access_token": token, "role": "club"}
+    # Compare plain text password (no hashing here)
+    if club.get("password") != data.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Create JWT token with club_id
+    token = create_access_token({"club_id": str(club["_id"])})
+
+    return {
+        "club_id": str(club["_id"]),
+        "access_token": token,
+    }
 
 # Admin Login
 @router.post("/admin/login")

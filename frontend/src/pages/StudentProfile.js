@@ -41,7 +41,7 @@ export default function StudentProfile() {
           });
         }
       } catch (err) {
-        console.log("No profile found", err);
+
         setIsEditing(true); // If error/no profile → show form
       } finally {
         setLoading(false);

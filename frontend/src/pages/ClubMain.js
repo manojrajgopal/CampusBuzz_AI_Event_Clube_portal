@@ -26,13 +26,17 @@ export default function ClubMain() {
 
   async function fetchClubData() {
     try {
+      if (clubId === "undefined" || !clubId) {
+        return;
+      }
       const res = await API.get(`/clubs/${clubId}`);
       setClub(res.data);
+      console.log("Fetched club data:", res.data);
     } catch (err) {
       console.error("Error fetching club data", err);
     }
   }
-
+  
   async function fetchEvents() {
     try {
       const res = await API.get(`/events?clubId=${clubId}`);
@@ -56,7 +60,7 @@ export default function ClubMain() {
     navigate("/");
   }
 
-  if (!club) return <div>Loading club info...</div>;
+  if (!club) return <div>Loading club info..</div>;
 
   return (
     <div style={{ padding: "20px" }}>
@@ -66,24 +70,25 @@ export default function ClubMain() {
       <p><b>Members:</b> {club.members?.length || 0}</p>
 
       <h3>Club Leadership</h3>
-      <p>
-        <b>Leader:</b>{" "}
-        {club.leader
-          ? `${club.leader.name} | ${club.leader.email} | ${club.leader.mobile}`
-          : "Not assigned"}
-      </p>
-      <p>
-        <b>Sub-Leader:</b>{" "}
-        {club.subLeader
-          ? `${club.subLeader.name} | ${club.subLeader.email} | ${club.subLeader.mobile}`
-          : "Not assigned"}
-      </p>
+<p>
+  <b>Leader:</b>{" "}
+  {club.leader
+    ? `${club.leader.name} | ${club.leader.email}${club.leader.mobile ? " | " + club.leader.mobile : ""}`
+    : "Not assigned"}
+</p>
+<p>
+  <b>Sub-Leader:</b>{" "}
+  {club.subleader
+    ? `${club.subleader.name} | ${club.subleader.email}${club.subleader.mobile ? " | " + club.subleader.mobile : ""}`
+    : "Not assigned"}
+</p>
+
 
       <h3>Teachers</h3>
       {teachers.length > 0 ? (
         <ul>
           {teachers.map((t) => (
-            <li key={t._id}>
+            <li key={t.email}>
               {t.name} | {t.email} | {t.mobile}
             </li>
           ))}

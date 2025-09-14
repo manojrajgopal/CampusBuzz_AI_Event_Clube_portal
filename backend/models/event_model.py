@@ -41,11 +41,4 @@ class RegistrationOut(BaseModel):
 
 
 
-class TeacherIn(BaseModel):
-    name: str
-    mobile: str
-    email: EmailStr
-    club_id: str   # club assigned to
 
-class TeacherOut(TeacherIn):
-    id: str
