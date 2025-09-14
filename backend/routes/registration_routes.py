@@ -1,4 +1,4 @@
-# reegistration_routers
+# registration_routers
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from bson import ObjectId

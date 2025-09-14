@@ -1,4 +1,3 @@
-// frontend/src/components/Navbar.js
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
@@ -86,6 +85,7 @@ export default function Navbar() {
 
       {/* Right side auth/profile links */}
       <div>
+        {/* Student Login */}
         {role === "student" && token ? (
           <>
             <button onClick={() => setShowPopup(!showPopup)}>Profile</button>
@@ -143,6 +143,10 @@ export default function Navbar() {
                 )}
               </div>
             )}
+          </>
+        ) : role === "club" && token ? (
+          <>
+            <button onClick={handleLogout}>Logout</button>
           </>
         ) : (
           <>

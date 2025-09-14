@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-route
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import StudentAuth from "./pages/StudentAuth";
-import ClubForms from "./pages/ClubForms";
+import ClubMain from "./pages/ClubMain";
+
 import Events from "./pages/Events";
 import AdminDashboard from "./pages/AdminDashboard";
 import Blogs from "./pages/Blogs";
@@ -12,6 +13,9 @@ import AdminLogin from "./pages/AdminLogin";
 import StudentEvents from "./pages/StudentEvents";
 import EventParticipants from "./pages/EventParticipants";
 import StudentProfile from "./pages/StudentProfile";
+import ClubDashboard from "./pages/ClubDashboard";
+
+
 
 function AppWrapper() {
   const navigate = useNavigate();
@@ -37,9 +41,9 @@ function AppWrapper() {
         <Route path="/student/profile" element={<StudentProfile />} />
 
         {/* Club */}
-        <Route path="/clubs" element={<ClubForms />} />
+        <Route path="/clubs" element={<ClubMain />} />
         <Route path="/club/login" element={<ClubLogin />} />
-
+        <Route path="/clubs/:id" element={<ClubDashboard />} />
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/login" element={<AdminLogin />} />
