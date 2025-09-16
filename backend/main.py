@@ -6,13 +6,20 @@ from routes import (auth_routes,
                     event_routes,
                       club_routes, 
                       registration_routes, 
-                      student_routes)
+                      student_routes,
+                       admin_routes)
 
 from config.startup import register_startup_events  # Import startup tasks
 from routes.blog_routes import router as blog_router
 
 
+
 app = FastAPI(title="CampusBuzz API", version="0.1")
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 # --- CORS middleware ---
 app.add_middleware(
@@ -30,6 +37,7 @@ app.include_router(club_routes.router)
 app.include_router(registration_routes.router)
 app.include_router(student_routes.router)
 app.include_router(blog_router)
+app.include_router(admin_routes.router, prefix="/api")  # Admin routes under /api/admin
 
 
 

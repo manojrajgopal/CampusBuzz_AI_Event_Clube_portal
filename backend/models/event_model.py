@@ -14,6 +14,7 @@ class EventIn(BaseModel):
     poster: Optional[str] = None
     isPaid: bool = False
     clubId: Optional[str] = None
+    clubName: Optional[str] = None  # For event creation by admin
 
 class EventOut(BaseModel):
     id: str

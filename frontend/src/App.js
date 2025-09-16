@@ -14,6 +14,7 @@ import StudentEvents from "./pages/StudentEvents";
 import EventParticipants from "./pages/EventParticipants";
 import StudentProfile from "./pages/StudentProfile";
 import ClubDashboard from "./pages/ClubDashboard";
+import EventCreate from "./pages/EventCreate";
 
 
 
@@ -44,6 +45,9 @@ function AppWrapper() {
         <Route path="/clubs" element={<ClubMain />} />
         <Route path="/club/login" element={<ClubLogin />} />
         <Route path="/clubs/:id" element={<ClubDashboard />} />
+        {/* In club event create */}
+        <Route path="/club/events/create" element={<EventCreate />} />
+
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/login" element={<AdminLogin />} />

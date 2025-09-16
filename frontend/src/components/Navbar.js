@@ -22,7 +22,7 @@ export default function Navbar() {
           setProfile(res.data);
           setFormData(res.data);
         } catch (err) {
-
+          console.error(err);
         }
       }
     }
@@ -85,8 +85,10 @@ export default function Navbar() {
 
       {/* Right side auth/profile links */}
       <div>
-        {/* Student Login */}
-        {role === "student" && token ? (
+        {/* Admin Login */}
+        {role === "admin" && token ? (
+          <button onClick={handleLogout}>Logout</button>
+        ) : role === "student" && token ? (
           <>
             <button onClick={() => setShowPopup(!showPopup)}>Profile</button>
             <button onClick={handleLogout} style={{ marginLeft: "10px" }}>
@@ -145,9 +147,7 @@ export default function Navbar() {
             )}
           </>
         ) : role === "club" && token ? (
-          <>
-            <button onClick={handleLogout}>Logout</button>
-          </>
+          <button onClick={handleLogout}>Logout</button>
         ) : (
           <>
             <Link to="/student/login" style={{ marginRight: "10px" }}>Student</Link>

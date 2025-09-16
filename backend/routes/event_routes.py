@@ -27,6 +27,7 @@ def serialize_event(event) -> dict:
         "poster": event.get("poster"),
         "isPaid": event.get("isPaid", False),
         "clubId": str(event.get("clubId")) if event.get("clubId") else None,
+        "clubName": event.get("clubName"),  # ✅ add here
         "created_by": str(event["created_by"]),
         "created_at": event["created_at"],
         "updated_at": event.get("updated_at"),
@@ -42,9 +43,16 @@ def serialize_registration(reg) -> dict:
     }
 
 # ----------------- Event Functions -----------------
-async def list_events():
-    events = await db[COLLECTION_EVENTS].find().sort("date", 1).to_list(100)
+async def list_events(clubId: Optional[str] = None):
+    query = {}
+    if clubId:
+        try:
+            query["clubId"] = ObjectId(clubId)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid clubId")
+    events = await db[COLLECTION_EVENTS].find(query).sort("date", 1).to_list(100)
     return [serialize_event(e) for e in events]
+
 
 async def get_event(event_id: str):
     try:
@@ -56,16 +64,7 @@ async def get_event(event_id: str):
     return serialize_event(event)
 
 async def create_event(event_in: EventIn, created_by: str):
-    if event_in.clubId:
-        try:
-            club = await db["clubs"].find_one({"_id": ObjectId(event_in.clubId)})
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid club ID")
-        if not club:
-            raise HTTPException(status_code=404, detail="Club not found")
-        if not club.get("approved", False):
-            raise HTTPException(status_code=403, detail="Club is not approved to host events")
-    
+    ...
     event_data = event_in.dict()
     event_data.update({
         "created_by": ObjectId(created_by),
@@ -73,7 +72,11 @@ async def create_event(event_in: EventIn, created_by: str):
     })
     if event_data.get("clubId"):
         event_data["clubId"] = ObjectId(event_data["clubId"])
-    
+
+    # ✅ ensure clubName is stored
+    if "clubName" in event_data:
+        event_data["clubName"] = event_data["clubName"]
+
     result = await db[COLLECTION_EVENTS].insert_one(event_data)
     new_event = await db[COLLECTION_EVENTS].find_one({"_id": result.inserted_id})
     return serialize_event(new_event)
@@ -98,19 +101,13 @@ async def update_event(event_id: str, event_in: EventIn, user_id: str, user_role
     updated_event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
     return serialize_event(updated_event)
 
-async def delete_event(event_id: str, user_id: str, user_role: str = "club"):
-    try:
-        event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid event ID")
-    if not event:
+@router.delete("/events/{event_id}")
+async def delete_event(event_id: str):
+    result = await db.events.delete_one({"_id": ObjectId(event_id)})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
-    
-    if str(event["created_by"]) != user_id and user_role != "admin":
-        raise HTTPException(status_code=403, detail="Not allowed to delete this event")
-    
-    await db[COLLECTION_EVENTS].delete_one({"_id": ObjectId(event_id)})
     return {"message": "Event deleted successfully"}
+
 
 # ----------------- Registration -----------------
 async def register_for_event(event_id: str, user_id: str):
@@ -168,9 +165,6 @@ async def create_event_route(event_in: EventIn, user=Depends(require_role(["club
 async def update_event_route(event_id: str, event_in: EventIn, user=Depends(require_role(["club","admin"]))):
     return await update_event(event_id, event_in, user_id=user["_id"], user_role=user["role"])
 
-@router.delete("/{event_id}")
-async def delete_event_route(event_id: str, user=Depends(require_role(["club","admin"]))):
-    return await delete_event(event_id, user_id=user["_id"], user_role=user["role"])
 
 # Event Registration
 @router.post("/{event_id}/register", response_model=RegistrationOut)

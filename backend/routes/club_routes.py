@@ -278,19 +278,8 @@ async def list_teachers_by_club(club_id: str):
         teachers.append(doc)
     return teachers
 
-
 # ----------------- Routes -----------------
-@router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
-async def add_teacher_route(teacher: TeacherIn):
-    return await add_teacher(teacher.dict())
 
-
-@router.get("/{club_id}/teachers", response_model=List[TeacherOut])
-async def get_club_teachers_route(club_id: str):
-    return await list_teachers_by_club(str(validate_object_id(club_id)))
-
-
-# ----------------- Routes -----------------
 # Public Routes
 @router.get("/{club_id}", response_model=ClubOut)
 async def get_club_route(club_id: str):
@@ -350,7 +339,6 @@ async def join_club_route(club_id: str, user=Depends(require_role(["student"])))
 async def leave_club_route(club_id: str, user=Depends(require_role(["student"]))):
     return await leave_club(str(validate_object_id(club_id)), user["_id"])
 
-
 # Teachers
 @router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
 async def add_teacher_route(teacher: TeacherIn):
@@ -360,9 +348,3 @@ async def add_teacher_route(teacher: TeacherIn):
 @router.get("/{club_id}/teachers", response_model=List[TeacherOut])
 async def get_club_teachers_route(club_id: str):
     return await list_teachers_by_club(str(validate_object_id(club_id)))
-
-
-# Club Details (must come last)
-@router.get("/{club_id}", response_model=ClubOut)
-async def get_club_route(club_id: str):
-    return await get_club(str(validate_object_id(club_id)))
