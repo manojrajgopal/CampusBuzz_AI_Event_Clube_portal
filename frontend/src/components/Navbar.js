@@ -85,6 +85,11 @@ export default function Navbar() {
 
       {/* Right side auth/profile links */}
       <div>
+        {/* Create Club button - visible always */}
+        <Link to="/club/create" style={{ marginRight: "10px" }}>
+          <button>Create Club</button>
+        </Link>
+
         {/* Admin Login */}
         {role === "admin" && token ? (
           <button onClick={handleLogout}>Logout</button>

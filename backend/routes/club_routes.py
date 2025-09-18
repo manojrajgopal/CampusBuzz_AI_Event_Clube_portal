@@ -200,6 +200,58 @@ async def list_pending_club_applications():
         apps.append(doc)
     return apps
 
+# ----------------- Join Requests Management -----------------
+
+async def list_join_requests(club_id: str):
+    requests = []
+    async for doc in db[COLLECTION_JOIN].find({"club_id": normalize_id(club_id)}):
+        doc["id"] = str(doc["_id"])
+        doc["_id"] = str(doc["_id"])
+        doc["user_id"] = str(doc["user_id"])
+
+        # 🔹 Fetch student details
+        user = await db[USERS_COLLECTION].find_one(
+            {"_id": normalize_id(doc["user_id"])},
+            {"_id": 0, "name": 1, "email": 1}
+        )
+        if user:
+            doc["name"] = user.get("name", "Unknown")
+            doc["email"] = user.get("email", "N/A")
+        else:
+            doc["name"] = "Unknown"
+            doc["email"] = "N/A"
+
+        requests.append(doc)
+    return requests
+
+
+
+async def approve_join_request(club_id: str, request_id: str):
+    req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
+    if not req:
+        raise HTTPException(status_code=404, detail="Join request not found")
+
+    # Add student to club members
+    await db[COLLECTION].update_one(
+        {"_id": normalize_id(club_id)},
+        {"$addToSet": {"members": normalize_id(req["user_id"])}}
+    )
+
+    # Remove request after approval
+    await db[COLLECTION_JOIN].delete_one({"_id": normalize_id(request_id)})
+    return {"status": "approved", "user_id": str(req["user_id"])}
+
+
+async def reject_join_request(request_id: str):
+    req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
+    if not req:
+        raise HTTPException(status_code=404, detail="Join request not found")
+
+    await db[COLLECTION_JOIN].delete_one({"_id": normalize_id(request_id)})
+    return {"status": "rejected", "user_id": str(req["user_id"])}
+
+
+
 
 async def approve_club_application(application_id: str, admin_id: str):
     app = await db[COLLECTION_CREATE].find_one({"_id": normalize_id(application_id)})
@@ -291,10 +343,14 @@ async def join_club_application(application: JoinClubApplication, user=Depends(r
     return await apply_join_club(application, user["_id"])
 
 
+# Student applies to create a new club
 @router.post("/apply/create")
-async def create_club_application(application: CreateClubApplication, user=Depends(require_role(["student"]))):
+async def create_club_application(
+    application: CreateClubApplication,
+    user=Depends(require_role(["student"]))
+):
+    await check_student_profile(user["_id"])
     return await apply_create_club(application, user["_id"])
-
 
 # Admin Application Endpoints
 @router.get("/applications", dependencies=[Depends(require_role(["admin"]))])
@@ -340,11 +396,25 @@ async def leave_club_route(club_id: str, user=Depends(require_role(["student"]))
     return await leave_club(str(validate_object_id(club_id)), user["_id"])
 
 # Teachers
-@router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
-async def add_teacher_route(teacher: TeacherIn):
-    return await add_teacher(teacher.dict())
+
 
 
 @router.get("/{club_id}/teachers", response_model=List[TeacherOut])
 async def get_club_teachers_route(club_id: str):
     return await list_teachers_by_club(str(validate_object_id(club_id)))
+
+# Club Leader/Admin – Manage Join Requests
+@router.get("/{club_id}/join-requests", dependencies=[Depends(require_role(["club", "admin"]))])
+async def get_join_requests(club_id: str):
+    return await list_join_requests(club_id)
+
+
+@router.post("/{club_id}/join-requests/{request_id}/approve", dependencies=[Depends(require_role(["club", "admin"]))])
+async def approve_request_route(club_id: str, request_id: str):
+    return await approve_join_request(club_id, request_id)
+
+
+@router.delete("/{club_id}/join-requests/{request_id}/reject", dependencies=[Depends(require_role(["club", "admin"]))])
+async def reject_request_route(club_id: str, request_id: str):
+    return await reject_join_request(request_id)
+

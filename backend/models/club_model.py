@@ -24,8 +24,8 @@ class JoinClubApplication(BaseModel):
     description: Optional[str] = None
 
 class CreateClubApplication(BaseModel):
-    # New fields for club
     club_name: str = Field(..., min_length=3, max_length=50)
+    description: Optional[str] = None
     club_email: EmailStr
     club_password: str = Field(..., min_length=6)
 

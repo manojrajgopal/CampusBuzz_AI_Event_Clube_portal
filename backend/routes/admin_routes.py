@@ -1,9 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from config.db import db
 from bson import ObjectId
+from utils.id_util import normalize_id
 from middleware.auth_middleware import require_role
 from datetime import datetime
 from routes.club_routes import serialize_club, list_teachers_by_club
+from models.teacher_model import TeacherIn, TeacherOut
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -20,6 +23,17 @@ def safe_serialize(doc: dict):
         else:
             new_doc[k] = v
     return new_doc
+
+from bson import ObjectId
+
+def validate_object_id(id_str: str) -> ObjectId:
+    """Validate and convert a string to ObjectId"""
+    if not ObjectId.is_valid(id_str):
+        raise ValueError("Invalid ObjectId")
+    return ObjectId(id_str)
+
+
+
 
 # --------------------------
 # Clubs Management
@@ -102,6 +116,23 @@ async def delete_event(event_id: str):
 # --------------------------
 # Teacher Management (Admin Only)
 # --------------------------
+# ✅ Add Teacher (moved from club_routes.py)
+@router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
+async def add_teacher_route(teacher: TeacherIn):
+    teacher_data = teacher.dict()
+
+    if not all(k in teacher_data for k in ["name", "mobile", "email", "club_id"]):
+        raise HTTPException(status_code=400, detail="Missing teacher fields")
+
+    teacher_data["club_id"] = normalize_id(teacher_data["club_id"])
+    result = await db["teachers"].insert_one(teacher_data)
+
+    teacher_data["id"] = str(result.inserted_id)
+    teacher_data["club_id"] = str(teacher_data["club_id"])
+    return teacher_data
+
+
+
 @router.get("/teachers", dependencies=[Depends(require_role(["admin"]))])
 async def get_all_teachers():
     try:
@@ -157,10 +188,11 @@ async def get_event_participants(event_id: str):
     participants = []
     try:
         async for p in db.event_participants.find({"event_id": ObjectId(event_id)}):
-            participants.append(serialize_doc(p))
+            participants.append(safe_serialize(p))  # ✅ use safe_serialize
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching participants: {e}")
     return participants
+
 
 @router.post("/events/{event_id}/checkin/{participant_id}")
 async def mark_participant_checkin(event_id: str, participant_id: str):

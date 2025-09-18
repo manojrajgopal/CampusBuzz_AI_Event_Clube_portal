@@ -9,13 +9,38 @@ export default function AdminDashboard() {
   const [teachers, setTeachers] = useState([]);
   const [clubs, setClubs] = useState([]);
   const [editTeacher, setEditTeacher] = useState(null);
+  const [newTeacher, setNewTeacher] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    club_id: "",
+  });
 
   // ------------------- LOAD DATA -------------------
   useEffect(() => {
-    API.get("/admin/events").then((res) => setEvents(res.data));
-    API.get("/admin/teachers").then((res) => setTeachers(res.data));
-    API.get("/admin/clubs").then((res) => setClubs(res.data));
+    loadAllData();
   }, []);
+
+  async function loadAllData() {
+    await loadEvents();
+    await loadTeachers();
+    await loadClubs();
+  }
+
+  async function loadEvents() {
+    const res = await API.get("/admin/events");
+    setEvents(res.data);
+  }
+
+  async function loadTeachers() {
+    const res = await API.get("/admin/teachers");
+    setTeachers(res.data);
+  }
+
+  async function loadClubs() {
+    const res = await API.get("/admin/clubs");
+    setClubs(res.data);
+  }
 
   // ------------------- EVENTS -------------------
   async function loadParticipants(eventId) {
@@ -43,9 +68,48 @@ export default function AdminDashboard() {
     setEditTeacher(null);
   }
 
+  async function addTeacher() {
+    try {
+      const res = await API.post("/admin/teachers", newTeacher, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      alert("✅ Teacher added successfully");
+      setNewTeacher({ name: "", email: "", mobile: "", club_id: "" });
+      loadTeachers();
+    } catch (err) {
+      alert("❌ Failed to add teacher");
+      console.error(err);
+    }
+  }
+
+  // ------------------- CLUBS -------------------
+  async function handleApproveClub(id) {
+    await API.put(`/admin/clubs/${id}/approve`);
+    setClubs(clubs.map((c) => (c.id === id ? { ...c, approved: true } : c)));
+  }
+
+  async function handleRejectClub(id) {
+    if (!window.confirm("Reject/Delete this club?")) return;
+    await API.delete(`/admin/clubs/${id}`);
+    setClubs(clubs.filter((c) => c.id !== id));
+  }
+
   return (
     <div style={{ padding: "20px" }}>
       <h2>Admin Dashboard</h2>
+
+      {/* ---------- CLUBS ---------- */}
+      <h3>Clubs</h3>
+      {clubs.map((club) => (
+        <div key={club.id} style={{ marginBottom: "10px" }}>
+          {club.name} | Leader: {club.leader?.name || "N/A"} | Approved:{" "}
+          {club.approved ? "✅ Yes" : "❌ No"}
+          {!club.approved && (
+            <button onClick={() => handleApproveClub(club.id)}>Approve</button>
+          )}
+          <button onClick={() => handleRejectClub(club.id)}>Reject</button>
+        </div>
+      ))}
 
       {/* ---------- EVENTS ---------- */}
       <h3>Events</h3>
@@ -74,6 +138,49 @@ export default function AdminDashboard() {
 
       {/* ---------- TEACHERS ---------- */}
       <h3>Teachers</h3>
+
+      {/* Add Teacher Form */}
+      <div style={{ marginBottom: "20px" }}>
+        <h4>Add Teacher</h4>
+        <input
+          type="text"
+          placeholder="Name"
+          value={newTeacher.name}
+          onChange={(e) => setNewTeacher({ ...newTeacher, name: e.target.value })}
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={newTeacher.email}
+          onChange={(e) =>
+            setNewTeacher({ ...newTeacher, email: e.target.value })
+          }
+        />
+        <input
+          type="text"
+          placeholder="Mobile"
+          value={newTeacher.mobile}
+          onChange={(e) =>
+            setNewTeacher({ ...newTeacher, mobile: e.target.value })
+          }
+        />
+        <select
+          value={newTeacher.club_id}
+          onChange={(e) =>
+            setNewTeacher({ ...newTeacher, club_id: e.target.value })
+          }
+        >
+          <option value="">-- Select Club --</option>
+          {clubs.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={addTeacher}>Add Teacher</button>
+      </div>
+
+      {/* Existing Teachers */}
       {teachers.map((t) => (
         <div key={t._id} style={{ marginBottom: "10px" }}>
           {editTeacher && editTeacher._id === t._id ? (

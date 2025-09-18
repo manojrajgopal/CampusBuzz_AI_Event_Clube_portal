@@ -1,3 +1,4 @@
+// Home.js
 import React, { useEffect, useState } from "react";
 import API from "../api";
 import { Link } from "react-router-dom";
@@ -7,36 +8,58 @@ export default function Home() {
   const [blogs, setBlogs] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [clubs, setClubs] = useState([]);
   const role = localStorage.getItem("role");
+
+  // ✅ make selectedClub a state (default from localStorage)
+  const [selectedClub, setSelectedClub] = useState(
+    localStorage.getItem("selectedClub") || ""
+  );
+
+  // keep localStorage updated when state changes
+  useEffect(() => {
+    localStorage.setItem("selectedClub", selectedClub);
+  }, [selectedClub]);
 
   // Fetch events, blogs, reviews
   useEffect(() => {
-    // Latest 3 events
     API.get("/events")
       .then((res) => setEvents(res.data.slice(0, 3)))
       .catch(() => setEvents([]));
 
-    // Latest 3 blogs
     API.get("/blogs")
       .then((res) => setBlogs(res.data.slice(0, 3)))
       .catch(() => setBlogs([]));
 
-    // Dummy reviews
     setReviews([
       { id: 1, name: "Alice", review: "Great platform for students!" },
       { id: 2, name: "Bob", review: "I enjoyed participating in events." },
       { id: 3, name: "Charlie", review: "Very smooth process and helpful team." },
     ]);
 
-    // Fetch student profile if logged in
     if (role === "student") {
       API.get("/student/profile")
         .then((res) => setProfile(res.data))
         .catch((err) => console.log("Profile not found", err));
+
+      API.get("/clubs")
+        .then((res) => setClubs(res.data))
+        .catch(() => setClubs([]));
     }
   }, [role]);
 
-  // Dummy event registration function
+  useEffect(() => {
+    async function fetchClubs() {
+      try {
+        const res = await API.get("/clubs");
+        setClubs(res.data);
+      } catch (err) {
+        console.error("Error fetching clubs:", err);
+      }
+    }
+    fetchClubs();
+  }, []);
+
   async function registerEvent(eventId) {
     try {
       await API.post(`/events/${eventId}/register`, {}, {
@@ -45,6 +68,15 @@ export default function Home() {
       alert("Registered successfully!");
     } catch (err) {
       alert(err.response?.data?.detail || "Error registering");
+    }
+  }
+
+  async function applyJoinClub(clubId) {
+    try {
+      await API.post("/clubs/apply/join", { club_id: clubId });
+      alert("Join request submitted ✅");
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to apply");
     }
   }
 
@@ -111,9 +143,7 @@ export default function Home() {
               <h3>{e.title}</h3>
               <p>{e.description}</p>
               <p>Date: {new Date(e.date).toLocaleString()}</p>
-              {
-                <button onClick={() => registerEvent(e.id)}>Register</button>
-              }
+              <button onClick={() => registerEvent(e.id)}>Register</button>
             </div>
           ))
         ) : (
@@ -139,12 +169,33 @@ export default function Home() {
         <Link to="/blogs">👉 View All Blogs</Link>
       </section>
 
-      {/* Student login/register button */}
-      {!role && (
-        <section style={{ marginBottom: "20px" }}>
-          <Link to="/student/login">Student Login / Register</Link>
-        </section>
-      )}
+      {/* Join Club Section */}
+      <div style={{ padding: "20px" }}>
+        <h2>Join a Club</h2>
+        <select
+          value={selectedClub}
+          onChange={(e) => setSelectedClub(e.target.value)}
+        >
+          <option value="">-- Select a Club --</option>
+          {clubs.length > 0 ? (
+            clubs.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))
+          ) : (
+            <option disabled>No clubs available</option>
+          )}
+        </select>
+        <button
+          style={{ marginLeft: "10px" }}
+          disabled={!selectedClub}
+          onClick={() => applyJoinClub(selectedClub)}
+        >
+          Apply
+        </button>
+      </div>
+
     </div>
   );
 }
