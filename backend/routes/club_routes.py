@@ -307,8 +307,6 @@ async def reject_club_application(app_id: str):
         raise HTTPException(status_code=404, detail="Application not found")
     return {"status": "rejected"}
 
-
-# ----------------- Teachers -----------------
 # ----------------- Teachers -----------------
 async def add_teacher(teacher: dict):
     if not all(k in teacher for k in ["name", "mobile", "email", "club_id"]):
@@ -347,16 +345,27 @@ async def join_club_application(application: JoinClubApplication, user=Depends(r
 @router.post("/apply/create")
 async def create_club_application(
     application: CreateClubApplication,
-    user=Depends(require_role(["student"]))
+    user=Depends(require_role(["student", "admin"]))
 ):
-    await check_student_profile(user["_id"])
+    # await check_student_profile(user["_id"])
     return await apply_create_club(application, user["_id"])
 
 # Admin Application Endpoints
 @router.get("/applications", dependencies=[Depends(require_role(["admin"]))])
 async def get_pending_applications():
-    return await list_pending_club_applications()
-
+    try:
+        # Simply get all documents from the club_create_applications collection
+        apps = []
+        async for doc in db["club_create_applications"].find({}):
+            # Convert ObjectId to string
+            doc["_id"] = str(doc["_id"])
+            if "user_id" in doc and isinstance(doc["user_id"], ObjectId):
+                doc["user_id"] = str(doc["user_id"])
+            apps.append(doc)
+        return apps
+    except Exception as e:
+        print(f"Error fetching applications: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching applications")
 
 @router.post("/applications/{app_id}/approve", dependencies=[Depends(require_role(["admin"]))])
 async def approve_application(app_id: str, user=Depends(require_role(["admin"]))):

@@ -9,12 +9,54 @@ export default function AdminDashboard() {
   const [teachers, setTeachers] = useState([]);
   const [clubs, setClubs] = useState([]);
   const [editTeacher, setEditTeacher] = useState(null);
+  const [applications, setApplications] = useState([]);
   const [newTeacher, setNewTeacher] = useState({
     name: "",
     email: "",
     mobile: "",
     club_id: "",
   });
+
+// ------------------- CLUB APPLICATIONS -------------------
+// ------------------- CLUB APPLICATIONS -------------------
+async function loadApplications() {
+  try {
+    const res = await API.get("/clubs/applications", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    setApplications(res.data);
+  } catch (error) {
+    console.error("Error loading applications:", error);
+  }
+}
+
+async function handleApproveApplication(appId) {
+  try {
+    await API.post(`/clubs/applications/${appId}/approve`, {}, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    setApplications(applications.filter((app) => app._id !== appId));
+  } catch (error) {
+    console.error("Error approving application:", error);
+  }
+}
+
+async function handleRejectApplication(appId) {
+  if (!window.confirm("Reject this application?")) return;
+  try {
+    await API.delete(`/clubs/applications/${appId}/reject`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    setApplications(applications.filter((app) => app._id !== appId));
+  } catch (error) {
+    console.error("Error rejecting application:", error);
+  }
+}
+
+// call inside useEffect
+useEffect(() => {
+  loadApplications();
+}, []);
 
   // ------------------- LOAD DATA -------------------
   useEffect(() => {
@@ -229,6 +271,19 @@ export default function AdminDashboard() {
           )}
         </div>
       ))}
+
+<h3>Club Applications</h3>
+{applications.length === 0 ? (
+  <p>No pending applications</p>
+) : (
+  applications.map((app) => (
+    <div key={app._id} style={{ marginBottom: "10px" }}>
+      <strong>{app.club_name}</strong> | Email: {app.club_email}
+      <button onClick={() => handleApproveApplication(app._id)}>Approve</button>
+      <button onClick={() => handleRejectApplication(app._id)}>Reject</button>
+    </div>
+  ))
+)}
     </div>
   );
 }

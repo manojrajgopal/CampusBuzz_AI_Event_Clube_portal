@@ -23,9 +23,9 @@ function AppWrapper() {
 
   useEffect(() => {
     const role = localStorage.getItem("role");
-    if (role === "student") navigate("/");
-    else if (role === "club") navigate("/clubs");
-    else if (role === "admin") navigate("/admin");
+    // if (role === "student") navigate("/");
+    // else if (role === "club") navigate("/clubs");
+    // else if (role === "admin") navigate("/admin");
   }, [navigate]);
 
   return (
@@ -47,8 +47,9 @@ function AppWrapper() {
         <Route path="/clubs/:id" element={<ClubDashboard />} />
         {/* In club event create */}
         <Route path="/club/events/create" element={<EventCreate />} />
-        <Route path="/club/create" element={<ClubCreate />} />
+        
         {/* Admin */}
+        <Route path="/club/create" element={<ClubCreate />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/login" element={<AdminLogin />} />
 
