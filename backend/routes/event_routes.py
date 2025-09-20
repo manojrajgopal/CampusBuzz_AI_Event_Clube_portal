@@ -1,4 +1,3 @@
-# backend/routes/event_routes.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from bson import ObjectId
@@ -15,8 +14,47 @@ router = APIRouter(prefix="/api/events", tags=["events"])
 COLLECTION_EVENTS = "events"
 COLLECTION_REGISTRATIONS = "event_registrations"
 
-# ----------------- Helpers -----------------
-def serialize_event(event) -> dict:
+# ----------------- Routes -----------------
+# Event CRUD
+@router.get("/", response_model=List[EventOut])
+async def get_events_route(clubId: Optional[str] = Query(None)):
+    query = {}
+    if clubId:
+        try:
+            query["clubId"] = ObjectId(clubId)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid clubId")
+    events = await db[COLLECTION_EVENTS].find(query).sort("date", 1).to_list(100)
+    
+    result = []
+    for event in events:
+        event_data = {
+            "id": str(event["_id"]),
+            "title": event["title"],
+            "description": event["description"],
+            "venue": event["venue"],
+            "date": event["date"],
+            "tags": event.get("tags", []),
+            "poster": event.get("poster"),
+            "isPaid": event.get("isPaid", False),
+            "clubId": str(event.get("clubId")) if event.get("clubId") else None,
+            "clubName": event.get("clubName"),
+            "created_by": str(event["created_by"]),
+            "created_at": event["created_at"],
+            "updated_at": event.get("updated_at"),
+        }
+        result.append(event_data)
+    return result
+
+@router.get("/{event_id}", response_model=EventOut)
+async def get_event_route(event_id: str):
+    try:
+        event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid event ID")
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
     return {
         "id": str(event["_id"]),
         "title": event["title"],
@@ -27,61 +65,46 @@ def serialize_event(event) -> dict:
         "poster": event.get("poster"),
         "isPaid": event.get("isPaid", False),
         "clubId": str(event.get("clubId")) if event.get("clubId") else None,
-        "clubName": event.get("clubName"),  # ✅ add here
+        "clubName": event.get("clubName"),
         "created_by": str(event["created_by"]),
         "created_at": event["created_at"],
         "updated_at": event.get("updated_at"),
     }
 
-def serialize_registration(reg) -> dict:
-    return {
-        "id": str(reg["_id"]),
-        "event_id": str(reg["event_id"]),
-        "user_id": str(reg["user_id"]),
-        "qr_code": reg["qr_code"],
-        "checked_in": reg.get("checked_in", False),
-    }
-
-# ----------------- Event Functions -----------------
-async def list_events(clubId: Optional[str] = None):
-    query = {}
-    if clubId:
-        try:
-            query["clubId"] = ObjectId(clubId)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid clubId")
-    events = await db[COLLECTION_EVENTS].find(query).sort("date", 1).to_list(100)
-    return [serialize_event(e) for e in events]
-
-
-async def get_event(event_id: str):
-    try:
-        event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid event ID")
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return serialize_event(event)
-
-async def create_event(event_in: EventIn, created_by: str):
-    ...
+@router.post("/", response_model=EventOut)
+async def create_event_route(event_in: EventIn, user=Depends(require_role(["club","admin"]))):
     event_data = event_in.dict()
     event_data.update({
-        "created_by": ObjectId(created_by),
+        "created_by": ObjectId(user["_id"]),
         "created_at": datetime.utcnow()
     })
     if event_data.get("clubId"):
         event_data["clubId"] = ObjectId(event_data["clubId"])
 
-    # ✅ ensure clubName is stored
     if "clubName" in event_data:
         event_data["clubName"] = event_data["clubName"]
 
     result = await db[COLLECTION_EVENTS].insert_one(event_data)
     new_event = await db[COLLECTION_EVENTS].find_one({"_id": result.inserted_id})
-    return serialize_event(new_event)
+    
+    return {
+        "id": str(new_event["_id"]),
+        "title": new_event["title"],
+        "description": new_event["description"],
+        "venue": new_event["venue"],
+        "date": new_event["date"],
+        "tags": new_event.get("tags", []),
+        "poster": new_event.get("poster"),
+        "isPaid": new_event.get("isPaid", False),
+        "clubId": str(new_event.get("clubId")) if new_event.get("clubId") else None,
+        "clubName": new_event.get("clubName"),
+        "created_by": str(new_event["created_by"]),
+        "created_at": new_event["created_at"],
+        "updated_at": new_event.get("updated_at"),
+    }
 
-async def update_event(event_id: str, event_in: EventIn, user_id: str, user_role: str = "club"):
+@router.put("/{event_id}", response_model=EventOut)
+async def update_event_route(event_id: str, event_in: EventIn, user=Depends(require_role(["club","admin"]))):
     try:
         event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
     except Exception:
@@ -89,7 +112,7 @@ async def update_event(event_id: str, event_in: EventIn, user_id: str, user_role
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
-    if str(event["created_by"]) != user_id and user_role != "admin":
+    if str(event["created_by"]) != user["_id"] and user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not allowed to update this event")
     
     update_data = event_in.dict()
@@ -99,28 +122,43 @@ async def update_event(event_id: str, event_in: EventIn, user_id: str, user_role
     
     await db[COLLECTION_EVENTS].update_one({"_id": ObjectId(event_id)}, {"$set": update_data})
     updated_event = await db[COLLECTION_EVENTS].find_one({"_id": ObjectId(event_id)})
-    return serialize_event(updated_event)
+    
+    return {
+        "id": str(updated_event["_id"]),
+        "title": updated_event["title"],
+        "description": updated_event["description"],
+        "venue": updated_event["venue"],
+        "date": updated_event["date"],
+        "tags": updated_event.get("tags", []),
+        "poster": updated_event.get("poster"),
+        "isPaid": updated_event.get("isPaid", False),
+        "clubId": str(updated_event.get("clubId")) if updated_event.get("clubId") else None,
+        "clubName": updated_event.get("clubName"),
+        "created_by": str(updated_event["created_by"]),
+        "created_at": updated_event["created_at"],
+        "updated_at": updated_event.get("updated_at"),
+    }
 
-@router.delete("/events/{event_id}")
+@router.delete("/{event_id}")
 async def delete_event(event_id: str):
-    result = await db.events.delete_one({"_id": ObjectId(event_id)})
+    result = await db[COLLECTION_EVENTS].delete_one({"_id": ObjectId(event_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted successfully"}
 
-
-# ----------------- Registration -----------------
-async def register_for_event(event_id: str, user_id: str):
+# Event Registration
+@router.post("/{event_id}/register", response_model=RegistrationOut)
+async def register_event_route(event_id: str, user=Depends(require_role(["student"]))):
     # Prevent duplicate registration
     existing = await db[COLLECTION_REGISTRATIONS].find_one({
         "event_id": ObjectId(event_id),
-        "user_id": ObjectId(user_id)
+        "user_id": ObjectId(user["_id"])
     })
     if existing:
         raise HTTPException(status_code=400, detail="Already registered")
     
     # Generate QR code
-    qr_data = f"{event_id}_{user_id}"
+    qr_data = f"{event_id}_{user['_id']}"
     img = qrcode.make(qr_data)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -128,15 +166,23 @@ async def register_for_event(event_id: str, user_id: str):
     
     reg_data = {
         "event_id": ObjectId(event_id),
-        "user_id": ObjectId(user_id),
+        "user_id": ObjectId(user["_id"]),
         "qr_code": qr_base64,
         "checked_in": False
     }
     result = await db[COLLECTION_REGISTRATIONS].insert_one(reg_data)
     new_reg = await db[COLLECTION_REGISTRATIONS].find_one({"_id": result.inserted_id})
-    return serialize_registration(new_reg)
+    
+    return {
+        "id": str(new_reg["_id"]),
+        "event_id": str(new_reg["event_id"]),
+        "user_id": str(new_reg["user_id"]),
+        "qr_code": new_reg["qr_code"],
+        "checked_in": new_reg.get("checked_in", False),
+    }
 
-async def checkin_registration(registration_id: str):
+@router.post("/checkin/{registration_id}", response_model=RegistrationOut)
+async def checkin_route(registration_id: str, user=Depends(require_role(["club","admin"]))):
     reg = await db[COLLECTION_REGISTRATIONS].find_one({"_id": ObjectId(registration_id)})
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
@@ -145,35 +191,14 @@ async def checkin_registration(registration_id: str):
         {"$set": {"checked_in": True}}
     )
     reg["checked_in"] = True
-    return serialize_registration(reg)
-
-# ----------------- Routes -----------------
-# Event CRUD
-@router.get("/", response_model=List[EventOut])
-async def get_events_route(clubId: Optional[str] = Query(None)):
-    return await list_events()
-
-@router.get("/{event_id}", response_model=EventOut)
-async def get_event_route(event_id: str):
-    return await get_event(event_id)
-
-@router.post("/", response_model=EventOut)
-async def create_event_route(event_in: EventIn, user=Depends(require_role(["club","admin"]))):
-    return await create_event(event_in, created_by=user["_id"])
-
-@router.put("/{event_id}", response_model=EventOut)
-async def update_event_route(event_id: str, event_in: EventIn, user=Depends(require_role(["club","admin"]))):
-    return await update_event(event_id, event_in, user_id=user["_id"], user_role=user["role"])
-
-
-# Event Registration
-@router.post("/{event_id}/register", response_model=RegistrationOut)
-async def register_event_route(event_id: str, user=Depends(require_role(["student"]))):
-    return await register_for_event(event_id, user["_id"])
-
-@router.post("/checkin/{registration_id}", response_model=RegistrationOut)
-async def checkin_route(registration_id: str, user=Depends(require_role(["club","admin"]))):
-    return await checkin_registration(registration_id)
+    
+    return {
+        "id": str(reg["_id"]),
+        "event_id": str(reg["event_id"]),
+        "user_id": str(reg["user_id"]),
+        "qr_code": reg["qr_code"],
+        "checked_in": reg.get("checked_in", False),
+    }
 
 # Event Participants
 @router.get("/{event_id}/participants", response_model=List[RegistrationOut])
@@ -189,7 +214,13 @@ async def get_event_participants(event_id: str, user=Depends(require_role(["club
 
     participants = []
     async for doc in db[COLLECTION_REGISTRATIONS].find({"event_id": event_oid}):
-        participants.append(serialize_registration(doc))
+        participants.append({
+            "id": str(doc["_id"]),
+            "event_id": str(doc["event_id"]),
+            "user_id": str(doc["user_id"]),
+            "qr_code": doc["qr_code"],
+            "checked_in": doc.get("checked_in", False),
+        })
     return participants
 
 # Event Check-in by user ID

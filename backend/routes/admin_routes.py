@@ -1,39 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from config.db import db
 from bson import ObjectId
-from utils.id_util import normalize_id
 from middleware.auth_middleware import require_role
 from datetime import datetime
-from routes.club_routes import serialize_club, list_teachers_by_club
 from models.teacher_model import TeacherIn, TeacherOut
-
+from routes.club_routes import serialize_club, list_teachers_by_club, get_club_teachers_route
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
-
-
-# Helper: safely convert MongoDB document to JSON
-def safe_serialize(doc: dict):
-    """Convert Mongo document to JSON-serializable dict"""
-    new_doc = {}
-    for k, v in doc.items():
-        if isinstance(v, ObjectId):
-            new_doc[k] = str(v)
-        elif isinstance(v, datetime):
-            new_doc[k] = v.isoformat()
-        else:
-            new_doc[k] = v
-    return new_doc
-
-from bson import ObjectId
-
-def validate_object_id(id_str: str) -> ObjectId:
-    """Validate and convert a string to ObjectId"""
-    if not ObjectId.is_valid(id_str):
-        raise ValueError("Invalid ObjectId")
-    return ObjectId(id_str)
-
-
-
 
 # --------------------------
 # Clubs Management
@@ -75,7 +48,6 @@ async def delete_club(club_id: str):
         raise HTTPException(status_code=404, detail="Club not found")
     return {"message": "❌ Club deleted"}
 
-
 # --------------------------
 # Events Management
 # --------------------------
@@ -85,11 +57,18 @@ async def get_all_events():
         events = []
         cursor = db.events.find({})
         async for event in cursor:
-            events.append(safe_serialize(event))
+            event_data = {}
+            for k, v in event.items():
+                if isinstance(v, ObjectId):
+                    event_data[k] = str(v)
+                elif isinstance(v, datetime):
+                    event_data[k] = v.isoformat()
+                else:
+                    event_data[k] = v
+            events.append(event_data)
         return events
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching events: {e}")
-
 
 @router.put("/events/{event_id}/approve")
 async def approve_event(event_id: str):
@@ -112,11 +91,9 @@ async def delete_event(event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "❌ Event deleted"}
 
-
 # --------------------------
 # Teacher Management (Admin Only)
 # --------------------------
-# ✅ Add Teacher (moved from club_routes.py)
 @router.post("/teachers", response_model=TeacherOut, dependencies=[Depends(require_role(["admin"]))])
 async def add_teacher_route(teacher: TeacherIn):
     teacher_data = teacher.dict()
@@ -124,14 +101,16 @@ async def add_teacher_route(teacher: TeacherIn):
     if not all(k in teacher_data for k in ["name", "mobile", "email", "club_id"]):
         raise HTTPException(status_code=400, detail="Missing teacher fields")
 
-    teacher_data["club_id"] = normalize_id(teacher_data["club_id"])
-    result = await db["teachers"].insert_one(teacher_data)
+    # Normalize club_id (convert to ObjectId)
+    try:
+        teacher_data["club_id"] = ObjectId(teacher_data["club_id"])
+    except:
+        raise HTTPException(status_code=400, detail="Invalid club ID format")
 
+    result = await db["teachers"].insert_one(teacher_data)
     teacher_data["id"] = str(result.inserted_id)
     teacher_data["club_id"] = str(teacher_data["club_id"])
     return teacher_data
-
-
 
 @router.get("/teachers", dependencies=[Depends(require_role(["admin"]))])
 async def get_all_teachers():
@@ -139,20 +118,18 @@ async def get_all_teachers():
         teachers = []
         cursor = db.teachers.find({})
         async for t in cursor:
-            teachers.append(safe_serialize(t))
+            teacher_data = {}
+            for k, v in t.items():
+                if isinstance(v, ObjectId):
+                    teacher_data[k] = str(v)
+                elif isinstance(v, datetime):
+                    teacher_data[k] = v.isoformat()
+                else:
+                    teacher_data[k] = v
+            teachers.append(teacher_data)
         return teachers
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching teachers: {e}")
-
-@router.get("/teachers", dependencies=[Depends(require_role(["admin"]))])
-async def get_all_teachers():
-    teachers = []
-    cursor = db.teachers.find({})
-    async for t in cursor:
-        t["_id"] = str(t["_id"])
-        t["club_id"] = str(t["club_id"]) if "club_id" in t else None
-        teachers.append(t)
-    return teachers
 
 @router.put("/teachers/{teacher_id}", dependencies=[Depends(require_role(["admin"]))])
 async def update_teacher(teacher_id: str, teacher_data: dict):
@@ -177,7 +154,6 @@ async def delete_teacher(teacher_id: str):
         raise HTTPException(status_code=404, detail="Teacher not found")
     return {"message": "Teacher deleted successfully"}
 
-
 # --------------------------
 # Event Participants Management
 # --------------------------
@@ -188,11 +164,18 @@ async def get_event_participants(event_id: str):
     participants = []
     try:
         async for p in db.event_participants.find({"event_id": ObjectId(event_id)}):
-            participants.append(safe_serialize(p))  # ✅ use safe_serialize
+            participant_data = {}
+            for k, v in p.items():
+                if isinstance(v, ObjectId):
+                    participant_data[k] = str(v)
+                elif isinstance(v, datetime):
+                    participant_data[k] = v.isoformat()
+                else:
+                    participant_data[k] = v
+            participants.append(participant_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching participants: {e}")
     return participants
-
 
 @router.post("/events/{event_id}/checkin/{participant_id}")
 async def mark_participant_checkin(event_id: str, participant_id: str):

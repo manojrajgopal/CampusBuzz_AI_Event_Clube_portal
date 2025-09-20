@@ -1,5 +1,5 @@
 # backend/routes/club_routes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 from bson import ObjectId
 from datetime import datetime
@@ -13,12 +13,11 @@ from models.club_model import (
     TeacherIn,
     TeacherOut,
 )
-from middleware.auth_middleware import require_role
+from middleware.auth_middleware import require_role, get_current_user
 from config.db import db
 from utils.mongo_utils import sanitize_doc
 from utils.id_util import normalize_id
-
-
+from pymongo.errors import PyMongoError
 
 router = APIRouter(prefix="/api/clubs", tags=["clubs"])
 
@@ -38,7 +37,6 @@ def validate_object_id(id_str: str) -> ObjectId:
         raise HTTPException(status_code=400, detail=f"Invalid ObjectId: {id_str}")
     return ObjectId(id_str)
 
-
 def serialize_club(club) -> dict:
     return {
         "id": str(club["_id"]),
@@ -53,12 +51,6 @@ def serialize_club(club) -> dict:
         "subleader": club.get("subleader", {}),
     }
 
-async def check_student_profile(user_id: str):
-    completed = await student_controller.is_profile_completed(user_id)
-    if not completed:
-        raise HTTPException(status_code=400, detail="Complete student profile before applying")
-
-
 # ----------------- Core Club Functions -----------------
 async def list_clubs():
     clubs = await db[COLLECTION].find({"approved": True}).to_list(100)
@@ -68,38 +60,6 @@ async def list_clubs():
         serialized["teachers"] = await list_teachers_by_club(serialized["id"])
         result.append(serialized)
     return result
-
-@router.get("/{club_id}", response_model=ClubOut)
-async def get_club(club_id: str):
-    try:
-
-        club = await db.clubs.find_one({"_id": ObjectId(club_id)})
-
-        if not club:
-
-            raise HTTPException(status_code=404, detail="Club not found")
-        
-        club = sanitize_doc(club)
-        try:
-            club["teachers"] = await db.teachers.find({"club_id": ObjectId(club_id)}, {"_id": 0, "name": 1, "email": 1, "mobile": 1}).to_list(None)
-            
-        except Exception as e:
-      
-            club["teachers"] = []
-
-        # Map Mongo fields to Pydantic fields
-        club["id"] = club.pop("_id")   # ✅ Pydantic expects `id`
-        club["description"] = club.get("description", "No description provided")  # ✅ Ensure description
-        club["members"] = [str(m) for m in club.get("members", [])]  # ✅ Convert ObjectIds to strings
-        club["created_by"] = str(club.get("created_by", "unknown"))
-        club["leader"] = await db.users.find_one({"_id": ObjectId(club.get("leader_id"))}, {"_id": 0, "name": 1, "email": 1, "mobile": 1}) if club.get("leader_id") else None
-        club["created_at"] = club.get("created_at") or datetime.utcnow()
-        print(club)
-        return ClubOut(**club)
-
-    except Exception as e:
-        print("Error in get_club:", str(e))
-        raise HTTPException(status_code=400, detail="Invalid club ID")
 
 async def create_club(club_in: ClubIn, created_by: str):
     club_data = club_in.dict()
@@ -113,7 +73,6 @@ async def create_club(club_in: ClubIn, created_by: str):
     new_club = await db[COLLECTION].find_one({"_id": result.inserted_id})
     return serialize_club(new_club)
 
-
 async def approve_club(club_id: str):
     oid = normalize_id(club_id)
     club = await db[COLLECTION].find_one({"_id": oid})
@@ -123,7 +82,6 @@ async def approve_club(club_id: str):
     updated_club = await db[COLLECTION].find_one({"_id": oid})
     return serialize_club(updated_club)
 
-
 async def reject_club(club_id: str):
     oid = normalize_id(club_id)
     club = await db[COLLECTION].find_one({"_id": oid})
@@ -132,7 +90,6 @@ async def reject_club(club_id: str):
     await db[COLLECTION].update_one({"_id": oid}, {"$set": {"approved": False}})
     updated_club = await db[COLLECTION].find_one({"_id": oid})
     return serialize_club(updated_club)
-
 
 async def join_club(club_id: str, user_id: str):
     oid = normalize_id(club_id)
@@ -148,7 +105,6 @@ async def join_club(club_id: str, user_id: str):
     updated_club = await db[COLLECTION].find_one({"_id": oid})
     return serialize_club(updated_club)
 
-
 async def leave_club(club_id: str, user_id: str):
     oid = normalize_id(club_id)
     club = await db[COLLECTION].find_one({"_id": oid})
@@ -163,21 +119,14 @@ async def leave_club(club_id: str, user_id: str):
     updated_club = await db[COLLECTION].find_one({"_id": oid})
     return serialize_club(updated_club)
 
-
 # ----------------- Applications -----------------
 async def apply_join_club(application: JoinClubApplication, user_id: str):
-    # check student profile
-    completed = await is_profile_completed(user_id)
-    if not completed:
-        raise HTTPException(status_code=400, detail="Complete your student profile before applying")
-    
     app_data = application.dict()
     app_data["user_id"] = normalize_id(user_id)
     result = await db[COLLECTION_JOIN].insert_one(app_data)
     app = await db[COLLECTION_JOIN].find_one({"_id": result.inserted_id})
     app["id"] = str(app["_id"])
     return app
-
 
 async def apply_create_club(application: CreateClubApplication, user_id: str):
     app_data = application.dict()
@@ -188,7 +137,6 @@ async def apply_create_club(application: CreateClubApplication, user_id: str):
     inserted_app["user_id"] = str(inserted_app["user_id"])
     del inserted_app["_id"]
     return inserted_app
-
 
 async def list_pending_club_applications():
     apps = []
@@ -201,7 +149,6 @@ async def list_pending_club_applications():
     return apps
 
 # ----------------- Join Requests Management -----------------
-
 async def list_join_requests(club_id: str):
     requests = []
     async for doc in db[COLLECTION_JOIN].find({"club_id": normalize_id(club_id)}):
@@ -209,7 +156,7 @@ async def list_join_requests(club_id: str):
         doc["_id"] = str(doc["_id"])
         doc["user_id"] = str(doc["user_id"])
 
-        # 🔹 Fetch student details
+        # Fetch student details
         user = await db[USERS_COLLECTION].find_one(
             {"_id": normalize_id(doc["user_id"])},
             {"_id": 0, "name": 1, "email": 1}
@@ -223,8 +170,6 @@ async def list_join_requests(club_id: str):
 
         requests.append(doc)
     return requests
-
-
 
 async def approve_join_request(club_id: str, request_id: str):
     req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
@@ -241,7 +186,6 @@ async def approve_join_request(club_id: str, request_id: str):
     await db[COLLECTION_JOIN].delete_one({"_id": normalize_id(request_id)})
     return {"status": "approved", "user_id": str(req["user_id"])}
 
-
 async def reject_join_request(request_id: str):
     req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
     if not req:
@@ -250,15 +194,12 @@ async def reject_join_request(request_id: str):
     await db[COLLECTION_JOIN].delete_one({"_id": normalize_id(request_id)})
     return {"status": "rejected", "user_id": str(req["user_id"])}
 
-
-
-
 async def approve_club_application(application_id: str, admin_id: str):
     app = await db[COLLECTION_CREATE].find_one({"_id": normalize_id(application_id)})
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    # --- Create club user in USERS_COLLECTION for login ---
+    # Create club user in USERS_COLLECTION for login
     existing = await db[USERS_COLLECTION].find_one({"email": app["club_email"]})
     if existing:
         raise HTTPException(status_code=400, detail="Club email already in use")
@@ -275,7 +216,7 @@ async def approve_club_application(application_id: str, admin_id: str):
     result_user = await db[USERS_COLLECTION].insert_one(club_user_doc)
     club_user_id = result_user.inserted_id
 
-    # --- Create the club in clubs collection ---
+    # Create the club in clubs collection
     club_doc = {
         "name": app.get("club_name"),
         "email": app.get("club_email"),
@@ -299,7 +240,6 @@ async def approve_club_application(application_id: str, admin_id: str):
 
     return {"message": "✅ Club approved successfully", "club_user_id": str(club_user_id)}
 
-
 async def reject_club_application(app_id: str):
     oid = normalize_id(app_id)
     result = await db[COLLECTION_CREATE].delete_one({"_id": oid})
@@ -318,7 +258,6 @@ async def add_teacher(teacher: dict):
     teacher["club_id"] = str(teacher["club_id"])
     return teacher
 
-
 async def list_teachers_by_club(club_id: str):
     teachers = []
     async for doc in db[COLLECTION_TEACHERS].find({"club_id": normalize_id(club_id)}):
@@ -329,85 +268,233 @@ async def list_teachers_by_club(club_id: str):
     return teachers
 
 # ----------------- Routes -----------------
+@router.get("/")
+async def getClubs():
+    try:
+        print("Getting Clubs")
+        cursor = db["clubs"].find({})
+        clubs_list = []
 
-# Public Routes
-@router.get("/{club_id}", response_model=ClubOut)
-async def get_club_route(club_id: str):
-    return await get_club(str(validate_object_id(club_id)))
+        async for club in cursor:
+            clubs_list.append({
+                "id": str(club["_id"]),
+                "name": club.get("name", "")
+            })
+
+        print(clubs_list)
+        return clubs_list
+    except Exception as e:
+        print("Error fetching clubs:", e)
+        return {"error": "Failed to fetch clubs"}
+
+@router.get("/applications", dependencies=[Depends(require_role(["admin"]))])
+async def get_pending_applications():
+    try:
+        # Fetch all documents from MongoDB as a list
+        apps = await db["club_create_applications"].find({}).to_list(length=None)
+        # Convert ObjectId fields to strings if you want
+        for app in apps:
+            if "_id" in app:
+                app["_id"] = str(app["_id"])
+            if "user_id" in app:
+                app["user_id"] = str(app["user_id"])
+        return apps
+    except Exception as e:
+        print(f"Error fetching applications: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching applications")
+
+@router.get("/{club_id}")
+async def get_club(club_id: str):
+    try:
+        club = await db.clubs.find_one({"_id": ObjectId(club_id)})
+
+        if not club:
+            raise HTTPException(status_code=404, detail="Club not found")
+        
+        club = sanitize_doc(club)
+
+        # Get teachers
+        try:
+            club["teachers"] = await db.teachers.find(
+                {"club_id": ObjectId(club_id)}, 
+                {"_id": 0, "name": 1, "email": 1, "mobile": 1}
+            ).to_list(None)
+        except Exception:
+            club["teachers"] = []
+
+        # Map Mongo fields to Pydantic fields
+        club["id"] = str(club.pop("_id"))  # ✅ Pydantic expects `id`
+        club["description"] = club.get("description", "No description provided")
+        club["created_by"] = str(club.get("created_by", "unknown"))
+
+        # Get leader info
+        club["leader"] = await db.users.find_one(
+            {"_id": ObjectId(club.get("leader_id"))}, 
+            {"_id": 0, "name": 1, "email": 1, "mobile": 1}
+        ) if club.get("leader_id") else None
+
+        # Convert members ObjectIds to names
+        members_ids = club.get("members", [])
+        members_names = []
+        for m_id in members_ids:
+            user = await db.users.find_one({"_id": ObjectId(m_id)}, {"_id": 0, "name": 1})
+            if user:
+                members_names.append(user["name"])
+        club["members"] = members_names  # ✅ Only names
+
+        club["created_at"] = club.get("created_at") or datetime.utcnow()
+
+        print(club)
+        return club
+
+    except Exception as e:
+        print("Error in get_club:", str(e))
+        raise HTTPException(status_code=400, detail="Invalid club ID")
 
 # Student Applications
 @router.post("/apply/join")
-async def join_club_application(application: JoinClubApplication, user=Depends(require_role(["student"]))):
-    return await apply_join_club(application, user["_id"])
+async def join_club_application(request: Request, user=Depends(get_current_user)):
+    try:
+        # 1️⃣ Get JSON body from frontend
+        data = await request.json()
+        club_id = data.get("club_id")
+        if not club_id:
+            raise HTTPException(status_code=400, detail="club_id is required")
 
+        club_obj_id = ObjectId(club_id)
+        user_obj_id = ObjectId(user["_id"])
 
+        # 2️⃣ Find the club
+        club = await db["clubs"].find_one({"_id": club_obj_id})
+        if not club:
+            raise HTTPException(status_code=404, detail="Club not found")
+
+        # 3️⃣ Check if user is already a member
+        if "members" in club and user_obj_id in club["members"]:
+            return {"message": "You are already a member", "club_id": club_id, "user_id": user["_id"]}
+
+        # 4️⃣ Add user to members
+        result = await db["clubs"].update_one(
+            {"_id": club_obj_id},
+            {"$push": {"members": user_obj_id}}  # safe now, because we already checked
+        )
+
+        return {"message": "Successfully joined the club", "club_id": club_id, "user_id": user["_id"]}
+
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # Student applies to create a new club
 @router.post("/apply/create")
 async def create_club_application(
     application: CreateClubApplication,
     user=Depends(require_role(["student", "admin"]))
 ):
-    # await check_student_profile(user["_id"])
     return await apply_create_club(application, user["_id"])
-
-# Admin Application Endpoints
-@router.get("/applications", dependencies=[Depends(require_role(["admin"]))])
-async def get_pending_applications():
-    try:
-        # Simply get all documents from the club_create_applications collection
-        apps = []
-        async for doc in db["club_create_applications"].find({}):
-            # Convert ObjectId to string
-            doc["_id"] = str(doc["_id"])
-            if "user_id" in doc and isinstance(doc["user_id"], ObjectId):
-                doc["user_id"] = str(doc["user_id"])
-            apps.append(doc)
-        return apps
-    except Exception as e:
-        print(f"Error fetching applications: {e}")
-        raise HTTPException(status_code=500, detail="Error fetching applications")
 
 @router.post("/applications/{app_id}/approve", dependencies=[Depends(require_role(["admin"]))])
 async def approve_application(app_id: str, user=Depends(require_role(["admin"]))):
-    return await approve_club_application(app_id, user["_id"])
+    try:
+        print(f"DEBUG: Received approve request for app_id={app_id}, user={user}")
 
+        # ✅ Convert to ObjectId safely inside route
+        if not ObjectId.is_valid(app_id):
+            print(f"DEBUG: Invalid ObjectId detected: {app_id}")
+            raise HTTPException(status_code=400, detail="Invalid application ID")
+        app_oid = ObjectId(app_id)
+        print(f"DEBUG: Converted app_id to ObjectId: {app_oid}")
+
+        # Fetch application
+        app = await db[COLLECTION_CREATE].find_one({"_id": app_oid})
+        print(f"DEBUG: Fetched application from DB: {app}")
+        if not app:
+            print("DEBUG: Application not found in database")
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        # Check if club email exists
+        existing = await db[USERS_COLLECTION].find_one({"email": app["club_email"]})
+        print(f"DEBUG: Existing user check for email {app['club_email']}: {existing}")
+        if existing:
+            print("DEBUG: Club email already in use")
+            raise HTTPException(status_code=400, detail="Club email already in use")
+
+        password_hash = pwd_context.hash(app["club_password"])
+        print(f"DEBUG: Hashed password for new club user")
+
+        club_user_doc = {
+            "name": app["club_name"],
+            "email": app["club_email"],
+            "password_hash": password_hash,
+            "role": "club",
+            "created_at": datetime.utcnow(),
+        }
+        print(f"DEBUG: Prepared club user document: {club_user_doc}")
+
+        result_user = await db[USERS_COLLECTION].insert_one(club_user_doc)
+        club_user_id = result_user.inserted_id
+        print(f"DEBUG: Inserted club user into DB, user_id={club_user_id}")
+
+        # Create the club
+        club_doc = {
+            "name": app.get("club_name"),
+            "email": app.get("club_email"),
+            "password": app.get("club_password"),
+            "leader_id": ObjectId(app["user_id"]),
+            "subleader": {
+                "name": app.get("subleader_name", ""),
+                "email": app.get("subleader_email", "")
+            },
+            "created_at": datetime.utcnow(),
+            "approved": True,
+            "members": [ObjectId(app["user_id"])],
+            "created_by": ObjectId(user["_id"]),
+        }
+        print(f"DEBUG: Prepared club document: {club_doc}")
+
+        await db[COLLECTION].insert_one(club_doc)
+        print("DEBUG: Inserted club into DB")
+
+        # Remove original application
+        await db[COLLECTION_CREATE].delete_one({"_id": app_oid})
+        print(f"DEBUG: Deleted original application with id={app_oid}")
+
+        return {"message": "✅ Club approved successfully", "club_user_id": str(club_user_id)}
+
+    except Exception as e:
+        print("Error approving application:", e)
+        raise HTTPException(status_code=400, detail="Failed to approve application")
 
 @router.delete("/applications/{app_id}/reject", dependencies=[Depends(require_role(["admin"]))])
 async def reject_application(app_id: str):
     return await reject_club_application(app_id)
-
 
 # Club Creation
 @router.post("/", response_model=ClubOut)
 async def create_club_route(club_in: ClubIn, user=Depends(require_role(["student", "club", "admin"]))):
     return await create_club(club_in, user["_id"])
 
-
 # Admin Approval for Clubs
 @router.put("/{club_id}/approve", response_model=ClubOut)
 async def approve_club_route(club_id: str, user=Depends(require_role(["admin"]))):
     return await approve_club(str(validate_object_id(club_id)))
 
-
 @router.put("/{club_id}/reject", response_model=ClubOut)
 async def reject_club_route(club_id: str, user=Depends(require_role(["admin"]))):
     return await reject_club(str(validate_object_id(club_id)))
-
 
 # Student Join / Leave
 @router.post("/{club_id}/join", response_model=ClubOut)
 async def join_club_route(club_id: str, user=Depends(require_role(["student"]))):
     return await join_club(str(validate_object_id(club_id)), user["_id"])
 
-
 @router.post("/{club_id}/leave", response_model=ClubOut)
 async def leave_club_route(club_id: str, user=Depends(require_role(["student"]))):
     return await leave_club(str(validate_object_id(club_id)), user["_id"])
 
 # Teachers
-
-
-
 @router.get("/{club_id}/teachers", response_model=List[TeacherOut])
 async def get_club_teachers_route(club_id: str):
     return await list_teachers_by_club(str(validate_object_id(club_id)))
@@ -417,13 +504,10 @@ async def get_club_teachers_route(club_id: str):
 async def get_join_requests(club_id: str):
     return await list_join_requests(club_id)
 
-
 @router.post("/{club_id}/join-requests/{request_id}/approve", dependencies=[Depends(require_role(["club", "admin"]))])
 async def approve_request_route(club_id: str, request_id: str):
     return await approve_join_request(club_id, request_id)
 
-
 @router.delete("/{club_id}/join-requests/{request_id}/reject", dependencies=[Depends(require_role(["club", "admin"]))])
 async def reject_request_route(club_id: str, request_id: str):
     return await reject_join_request(request_id)
-
