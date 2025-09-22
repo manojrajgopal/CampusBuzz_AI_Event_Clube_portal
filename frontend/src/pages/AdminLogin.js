@@ -16,7 +16,6 @@ export default function AdminLogin() {
       const res = await API.post("/auth/admin/login", form);
       localStorage.setItem("token", res.data.token || res.data.access_token);
       localStorage.setItem("role", res.data.role || "admin");
-      alert("Admin login successful!");
       navigate("/admin"); // ✅ redirect to admin dashboard
     } catch (err) {
       alert("Admin login failed");

@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 import datetime
 
+
 class UserRegister(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
     email: EmailStr
@@ -36,5 +37,7 @@ class UserOut(BaseModel):
     role: str
 
 # Optional: For student profile creation
-class StudentSignup(UserSignup):
-    pass
+class StudentSignupRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
