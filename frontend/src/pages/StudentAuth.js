@@ -29,7 +29,6 @@ export default function StudentAuth() {
         });
         localStorage.setItem("token", res.data.token || res.data.access_token);
         localStorage.setItem("role", res.data.role || "student");
-        alert("Login successful!");
         navigate("/"); // ✅ redirect to home
       }
     } catch (err) {

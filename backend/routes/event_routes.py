@@ -7,7 +7,7 @@ import qrcode, io, base64
 
 from config.db import db
 from models.event_model import EventIn, EventOut, RegistrationOut
-from middleware.auth_middleware import require_role
+from middleware.auth_middleware import require_role, get_current_user
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
@@ -71,18 +71,21 @@ async def get_event_route(event_id: str):
         "updated_at": event.get("updated_at"),
     }
 
-@router.post("/", response_model=EventOut)
-async def create_event_route(event_in: EventIn, user=Depends(require_role(["club","admin"]))):
+@router.post("/")
+async def create_event_route(event_in: EventIn):
+    print(event_in)
+
+    # Use a fixed user ID since no authorization
+    user_id = "64f123456789abcdef123456"  # replace with a valid ObjectId string
+
     event_data = event_in.dict()
     event_data.update({
-        "created_by": ObjectId(user["_id"]),
+        "created_by": ObjectId(user_id),
         "created_at": datetime.utcnow()
     })
+
     if event_data.get("clubId"):
         event_data["clubId"] = ObjectId(event_data["clubId"])
-
-    if "clubName" in event_data:
-        event_data["clubName"] = event_data["clubName"]
 
     result = await db[COLLECTION_EVENTS].insert_one(event_data)
     new_event = await db[COLLECTION_EVENTS].find_one({"_id": result.inserted_id})
@@ -201,8 +204,8 @@ async def checkin_route(registration_id: str, user=Depends(require_role(["club",
     }
 
 # Event Participants
-@router.get("/{event_id}/participants", response_model=List[RegistrationOut])
-async def get_event_participants(event_id: str, user=Depends(require_role(["club", "admin"]))):
+@router.get("/{event_id}/participants", response_model=List[dict])
+async def get_event_participants(event_id: str):
     try:
         event_oid = ObjectId(event_id)
     except InvalidId:
@@ -214,13 +217,20 @@ async def get_event_participants(event_id: str, user=Depends(require_role(["club
 
     participants = []
     async for doc in db[COLLECTION_REGISTRATIONS].find({"event_id": event_oid}):
+        user_doc = await db["users"].find_one({"_id": doc["user_id"]})
+        user_name = user_doc.get("name") if user_doc else None
+
         participants.append({
+            "_id": str(doc["_id"]),
             "id": str(doc["_id"]),
             "event_id": str(doc["event_id"]),
             "user_id": str(doc["user_id"]),
+            "name": user_name,
             "qr_code": doc["qr_code"],
             "checked_in": doc.get("checked_in", False),
         })
+
+    print(participants)
     return participants
 
 # Event Check-in by user ID

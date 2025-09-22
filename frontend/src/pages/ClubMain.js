@@ -152,6 +152,32 @@ export default function ClubMain() {
     }
   }, []);
 
+  async function handleApproveRequest(id) {
+    try {
+      await API.post(`/clubs/${clubId}/join-requests/${id}/approve`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("✅ Request approved!");
+      fetchClubData(); // refresh members and requests
+    } catch (err) {
+      console.error(err);
+      alert("Failed to approve request");
+    }
+  }
+
+  async function handleRejectRequest(id) {
+    try {
+      await API.post(`/clubs/${clubId}/join-requests/${id}/reject`, { id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("❌ Request rejected!");
+      fetchClubData(); // refresh requests
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reject request");
+    }
+  }
+
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
@@ -285,17 +311,56 @@ export default function ClubMain() {
             <h3>Members</h3>
             <div className="members-list">
               {club.members && club.members.length > 0 ? (
-                club.members.map((name, index) => (
-                  <div key={index} className="member-item">
+                club.members.map((m) => (
+                  <div key={m.id || m.email} className="member-item">
                     <div className="member-avatar">
-                      {name.charAt(0).toUpperCase()}
+                      {m.name ? m.name.charAt(0).toUpperCase() : "?"}
                     </div>
-                    <span>{name}</span>
+                    <div className="member-details">
+                      <span>{m.name || "Unknown"}</span>
+                      <p className="member-email">{m.email}</p>
+                    </div>
                   </div>
                 ))
               ) : (
                 <p>No members yet</p>
               )}
+            </div>
+          </div>
+          
+          <div className="sidebar-section">
+            <h3>Requested to Join</h3>
+            <div className="requested-list">
+              {club.requests && club.requests.length > 0 ? (
+                club.requests.map((r) => (
+                  <div key={r.id || r.email} className="request-item">
+                    <div className="member-avatar">
+                      {r.name ? r.name.charAt(0).toUpperCase() : "?"}
+                    </div>
+                    <div className="request-details">
+                      <span>{r.name || "Unknown"}</span>
+                      <p className="request-email">{r.email}</p>
+                    </div>
+                    <div className="request-actions">
+                      <button
+                        className="btn-primary sm"
+                        onClick={() => handleApproveRequest(r.id)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn-outline sm"
+                        onClick={() => handleRejectRequest(r.id)}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No requests yet</p>
+              )}
+
             </div>
           </div>
 

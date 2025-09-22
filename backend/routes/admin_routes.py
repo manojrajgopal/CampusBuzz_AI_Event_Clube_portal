@@ -133,17 +133,26 @@ async def get_all_teachers():
 
 @router.put("/teachers/{teacher_id}", dependencies=[Depends(require_role(["admin"]))])
 async def update_teacher(teacher_id: str, teacher_data: dict):
-    if not ObjectId.is_valid(teacher_id):
-        raise HTTPException(status_code=400, detail="Invalid teacher ID")
-    result = await db.teachers.update_one(
-        {"_id": ObjectId(teacher_id)},
-        {"$set": teacher_data}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Teacher not found")
-    updated = await db.teachers.find_one({"_id": ObjectId(teacher_id)})
-    updated["_id"] = str(updated["_id"])
-    return updated
+    print("teacher_id:", teacher_id)
+    print("teacher_data:", teacher_data)
+
+    # Update the club by adding teacher_id to its "teachers" list if club_name is provided
+    if "club_id" in teacher_data:
+        await db.clubs.update_one(
+            {"name": teacher_data["club_id"]},  # match by club name
+            {"$addToSet": {"teachers": teacher_id}}  # prevents duplicates
+        )
+        await db.teachers.update_one(
+            {"_id": ObjectId(teacher_id)},
+            {
+                "$set": {
+                    "club_name": teacher_data["club_id"]
+                }
+            }
+        )
+        return {"status": "ok", "message": "teacher saved completed"}
+
+    return {"status": "ok", "message": "teacher already there"}
 
 @router.delete("/teachers/{teacher_id}", dependencies=[Depends(require_role(["admin"]))])
 async def delete_teacher(teacher_id: str):

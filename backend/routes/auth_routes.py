@@ -4,7 +4,8 @@ from datetime import datetime
 from config.db import db
 from bson import ObjectId
 from utils.jwt_util import create_access_token
-from models.user_model import UserRegister, UserLogin
+from models.user_model import  UserLogin,StudentSignupRequest 
+
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -13,16 +14,20 @@ USERS_COLLECTION = "users"
 
 # ------------------ ROUTES ------------------
 
+
+
 # Student Signup
 @router.post("/student/signup")
-async def student_signup(data: UserRegister):
+async def student_signup(data: StudentSignupRequest):
     # Check if email already exists
     existing = await db[USERS_COLLECTION].find_one({"email": data.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Hash password and create user document
+    # Hash password
     password_hash = pwd_context.hash(data.password)
+
+    # Build document
     user_doc = {
         "name": data.name,
         "email": data.email,
@@ -31,20 +36,21 @@ async def student_signup(data: UserRegister):
         "created_at": datetime.utcnow()
     }
 
-    # Insert user
+    # Insert
     result = await db[USERS_COLLECTION].insert_one(user_doc)
     user_doc["_id"] = result.inserted_id
-    
-    # Return serialized user
-    user_response = {
-        "user_id": str(user_doc["_id"]),
-        "name": user_doc["name"],
-        "email": user_doc["email"],
-        "role": user_doc["role"],
-        "created_at": user_doc["created_at"].isoformat() if user_doc.get("created_at") else None
+
+    # Response
+    return {
+        "message": "Student registered successfully",
+        "user": {
+            "user_id": str(user_doc["_id"]),
+            "name": user_doc["name"],
+            "email": user_doc["email"],
+            "role": user_doc["role"],
+            "created_at": user_doc["created_at"].isoformat()
+        }
     }
-    
-    return {"message": "Student registered successfully", "user": user_response}
 
 # Student Login
 @router.post("/student/login")

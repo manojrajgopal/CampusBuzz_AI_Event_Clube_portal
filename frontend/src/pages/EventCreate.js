@@ -2,8 +2,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
+import "./EventCreate.css";
 
-export default function EventCreate() {
+export default function EventCreate({ onSuccess, onCancel }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [venue, setVenue] = useState("");
@@ -11,29 +12,41 @@ export default function EventCreate() {
   const [tags, setTags] = useState("");
   const [poster, setPoster] = useState(null);
   const [isPaid, setIsPaid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const navigate = useNavigate();
 
-  const clubId =
-    localStorage.getItem("club_id") || localStorage.getItem("clubId");
+  const clubId = localStorage.getItem("club_id") || localStorage.getItem("clubId");
   const token = localStorage.getItem("token");
-  const clubName = localStorage.getItem("club_name"); // ✅ display only
+  const clubName = localStorage.getItem("club_name");
 
-  // Convert uploaded file to Base64
+  // Convert uploaded file to Base64 with preview
   function handlePosterUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Preview image
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setPoster(reader.result); // Base64 string
+    reader.onload = (e) => {
+      setPreviewImage(e.target.result);
     };
     reader.readAsDataURL(file);
+
+    // Base64 conversion for backend
+    const base64Reader = new FileReader();
+    base64Reader.onloadend = () => {
+      setPoster(base64Reader.result);
+    };
+    base64Reader.readAsDataURL(file);
   }
 
-  // ✅ Works fully inside EventCreate.js
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isLoading) return;
+
+    setIsLoading(true);
+    
     try {
       await API.post(
         "/events/",
@@ -42,123 +55,201 @@ export default function EventCreate() {
           date,
           venue,
           description,
-          tags: tags
-            ? tags.split(",").map((t) => t.trim())
-            : [],
+          tags: tags ? tags.split(",").map((t) => t.trim()) : [],
           poster,
           isPaid,
-
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("✅ Event created successfully!");
-      navigate("/club/main");
+      // Success animation and redirect
+      document.querySelector('.event-create-container').classList.add('success-animation');
+      
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          alert("✅ Event created successfully!");
+          navigate("/club/main");
+        }
+      }, 1000);
+      
     } catch (err) {
       console.error("Error creating event", err);
+      document.querySelector('.event-create-container').classList.add('error-shake');
+      setTimeout(() => {
+        document.querySelector('.event-create-container').classList.remove('error-shake');
+      }, 500);
       alert("❌ Failed to create event");
+    } finally {
+      setIsLoading(false);
     }
   }
 
+  function handleCancel() {
+    document.querySelector('.event-create-container').classList.add('exit-animation');
+    setTimeout(() => {
+      if (onCancel) {
+        onCancel();
+      } else {
+        navigate("/club/main");
+      }
+    }, 300);
+  }
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Create New Event</h2>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Event Title: </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+    <div className="event-create-wrapper">
+      <div className="three-background-create"></div>
+      
+      <div className="event-create-container">
+        <div className="create-header">
+          <h2>Create New Event</h2>
+          <p className="club-name">For {clubName}</p>
         </div>
 
-        <div>
-          <label>Date: </label>
-          <input
-            type="datetime-local"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="event-create-form">
+          <div className="form-grid">
+            <div className="form-group">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="floating-input"
+                placeholder="Event Title"
+              />
+              <div className="input-underline"></div>
+            </div>
 
-        <div>
-          <label>Venue: </label>
-          <input
-            type="text"
-            value={venue}
-            onChange={(e) => setVenue(e.target.value)}
-            required
-          />
-        </div>
+            <div className="form-group">
+              <input
+                type="datetime-local"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="floating-input"
+              />
+              <div className="input-underline"></div>
+            </div>
 
-        <div>
-          <label>Description: </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
+            <div className="form-group">
+              <input
+                type="text"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                required
+                className="floating-input"
+                placeholder="Venue"
+              />
+              <div className="input-underline"></div>
+            </div>
 
-        <div>
-          <label>Tags (comma separated): </label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-          />
-        </div>
+            <div className="form-group full-width">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="floating-textarea"
+                rows="4"
+                placeholder="Description"
+              />
+              <div className="input-underline"></div>
+            </div>
 
-        <div>
-          <label>Poster: </label>
-          <input type="file" accept="image/*" onChange={handlePosterUpload} />
-          {poster && <p>✅ Poster uploaded</p>}
-        </div>
+            <div className="form-group full-width">
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                className="floating-input"
+                placeholder="music, workshop, social..."
+              />
+              <div className="input-underline"></div>
+            </div>
 
-        <div>
-          <label>Paid Event? </label>
-          <div>
-            <button
-              type="button"
-              style={{
-                marginRight: "10px",
-                backgroundColor: isPaid ? "green" : "lightgray",
-                color: "white",
-                padding: "5px 10px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-              onClick={() => setIsPaid(true)}
+            <div className="form-group full-width">
+              <label className="file-upload-label">
+                <span className="upload-icon">📷</span>
+                <span className="upload-text">
+                  {previewImage ? "Poster Uploaded ✓" : "Upload Event Poster"}
+                </span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handlePosterUpload} 
+                  className="file-input"
+                />
+              </label>
+              
+              {previewImage && (
+                <div className="image-preview">
+                  <img src={previewImage} alt="Poster preview" />
+                  <button 
+                    type="button" 
+                    className="remove-image"
+                    onClick={() => {
+                      setPreviewImage(null);
+                      setPoster(null);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group full-width">
+              <label className="payment-label">Paid Event?</label>
+              <div className="payment-toggle">
+                <button
+                  type="button"
+                  className={`toggle-option ${isPaid ? 'active' : ''}`}
+                  onClick={() => setIsPaid(true)}
+                >
+                  <span className="toggle-icon">💰</span>
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-option ${!isPaid ? 'active' : ''}`}
+                  onClick={() => setIsPaid(false)}
+                >
+                  <span className="toggle-icon">🎫</span>
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              type="submit" 
+              className={`submit-btn ${isLoading ? 'loading' : ''}`}
+              disabled={isLoading}
             >
-              Yes
+              {isLoading ? (
+                <>
+                  <div className="spinner-small"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <span className="btn-icon">✨</span>
+                  Create Event
+                </>
+              )}
             </button>
-            <button
-              type="button"
-              style={{
-                backgroundColor: !isPaid ? "red" : "lightgray",
-                color: "white",
-                padding: "5px 10px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-              onClick={() => setIsPaid(false)}
+            
+            <button 
+              type="button" 
+              className="cancel-btn"
+              onClick={handleCancel}
+              disabled={isLoading}
             >
-              No
+              Cancel
             </button>
           </div>
-        </div>
-
-
-        <button type="submit">Create Event</button>
-        <button type="button" onClick={() => navigate("/club/main")}>
-          Cancel
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

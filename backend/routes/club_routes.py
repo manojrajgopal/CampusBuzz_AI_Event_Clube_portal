@@ -4,7 +4,7 @@ from typing import List
 from bson import ObjectId
 from datetime import datetime
 from passlib.context import CryptContext
-
+from bson.errors import InvalidId
 from models.club_model import (
     ClubIn,
     ClubOut,
@@ -171,21 +171,6 @@ async def list_join_requests(club_id: str):
         requests.append(doc)
     return requests
 
-async def approve_join_request(club_id: str, request_id: str):
-    req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
-    if not req:
-        raise HTTPException(status_code=404, detail="Join request not found")
-
-    # Add student to club members
-    await db[COLLECTION].update_one(
-        {"_id": normalize_id(club_id)},
-        {"$addToSet": {"members": normalize_id(req["user_id"])}}
-    )
-
-    # Remove request after approval
-    await db[COLLECTION_JOIN].delete_one({"_id": normalize_id(request_id)})
-    return {"status": "approved", "user_id": str(req["user_id"])}
-
 async def reject_join_request(request_id: str):
     req = await db[COLLECTION_JOIN].find_one({"_id": normalize_id(request_id)})
     if not req:
@@ -313,15 +298,6 @@ async def get_club(club_id: str):
         
         club = sanitize_doc(club)
 
-        # Get teachers
-        try:
-            club["teachers"] = await db.teachers.find(
-                {"club_id": ObjectId(club_id)}, 
-                {"_id": 0, "name": 1, "email": 1, "mobile": 1}
-            ).to_list(None)
-        except Exception:
-            club["teachers"] = []
-
         # Map Mongo fields to Pydantic fields
         club["id"] = str(club.pop("_id"))  # ✅ Pydantic expects `id`
         club["description"] = club.get("description", "No description provided")
@@ -333,18 +309,81 @@ async def get_club(club_id: str):
             {"_id": 0, "name": 1, "email": 1, "mobile": 1}
         ) if club.get("leader_id") else None
 
+        print("Here")
         # Convert members ObjectIds to names
-        members_ids = club.get("members", [])
-        members_names = []
-        for m_id in members_ids:
-            user = await db.users.find_one({"_id": ObjectId(m_id)}, {"_id": 0, "name": 1})
-            if user:
-                members_names.append(user["name"])
-        club["members"] = members_names  # ✅ Only names
+        requests_final = []
+        for r in club.get("requests", []):
+            try:
+                # If it's a valid ObjectId, fetch user info
+                if ObjectId.is_valid(str(r)):
+                    user = await db.users.find_one(
+                        {"_id": ObjectId(r)},
+                        {"_id": 0, "name": 1, "email": 1}
+                    )
+                    if user:
+                        requests_final.append({
+                            "id": str(r),
+                            "name": user.get("name", "Unknown"),
+                            "email": user.get("email", "N/A")
+                        })
+                    else:
+                        requests_final.append({"id": str(r), "name": "Unknown", "email": "N/A"})
+                else:
+                    # Already a plain string (fallback/manual entry)
+                    requests_final.append({"id": None, "name": str(r), "email": None})
+            except InvalidId:
+                requests_final.append({"id": None, "name": str(r), "email": None})
+
+        club["requests"] = requests_final
+
+        # Convert members ObjectIds to names
+        members_final = []
+        for m in club.get("members", []):
+            if ObjectId.is_valid(str(m)):
+                user = await db.users.find_one(
+                    {"_id": ObjectId(m)},
+                    {"_id": 0, "name": 1, "email": 1}
+                )
+                if user:
+                    members_final.append({
+                        "id": str(m),
+                        "name": user.get("name", "Unknown"),
+                        "email": user.get("email", "N/A")
+                    })
+            else:
+                members_final.append({"id": None, "name": str(m), "email": None})
+
+        club["members"] = members_final
+
+        teachers_final = []
+        for t in club.get("teachers", []):
+            try:
+                if ObjectId.is_valid(t):  # t is already a string
+                    user = await db.teachers.find_one(
+                        {"_id": ObjectId(t)},   # convert string to ObjectId
+                        {"_id": 0, "name": 1, "email": 1}
+                    )
+                    print(user)
+                    if user:
+                        teachers_final.append({
+                            "id": str(t),
+                            "name": user.get("name", "Unknown"),
+                            "email": user.get("email", "N/A")
+                        })
+                    else:
+                        teachers_final.append({"id": str(t), "name": "Unknown", "email": "N/A"})
+                else:
+                    teachers_final.append({"id": None, "name": str(t), "email": None})
+            except Exception as e:
+                print("Error processing teacher:", str(e))
+                teachers_final.append({"id": None, "name": str(t), "email": None})
+
+        club["teachers"] = teachers_final
 
         club["created_at"] = club.get("created_at") or datetime.utcnow()
 
         print(club)
+        print("To here")
         return club
 
     except Exception as e:
@@ -376,7 +415,7 @@ async def join_club_application(request: Request, user=Depends(get_current_user)
         # 4️⃣ Add user to members
         result = await db["clubs"].update_one(
             {"_id": club_obj_id},
-            {"$push": {"members": user_obj_id}}  # safe now, because we already checked
+            {"$push": {"requests": user_obj_id}}  # safe now, because we already checked
         )
 
         return {"message": "Successfully joined the club", "club_id": club_id, "user_id": user["_id"]}
@@ -504,10 +543,43 @@ async def get_club_teachers_route(club_id: str):
 async def get_join_requests(club_id: str):
     return await list_join_requests(club_id)
 
-@router.post("/{club_id}/join-requests/{request_id}/approve", dependencies=[Depends(require_role(["club", "admin"]))])
+@router.post("/{club_id}/join-requests/{request_id}/approve")
 async def approve_request_route(club_id: str, request_id: str):
-    return await approve_join_request(club_id, request_id)
+    print("Approving...")
+    club = await db[COLLECTION].find_one({"_id": normalize_id(club_id)})
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
 
-@router.delete("/{club_id}/join-requests/{request_id}/reject", dependencies=[Depends(require_role(["club", "admin"]))])
+    # Remove from requests and add to members
+    await db[COLLECTION].update_one(
+        {"_id": normalize_id(club_id)},
+        {
+            "$pull": {"requests": normalize_id(request_id)},
+            "$addToSet": {"members": normalize_id(request_id)}
+        }
+    )
+
+    return {
+        "status": "approved",
+        "club_id": club_id,
+        "user_id": request_id
+    }
+
+@router.post("/{club_id}/join-requests/{request_id}/reject")
 async def reject_request_route(club_id: str, request_id: str):
-    return await reject_join_request(request_id)
+    print("Rejecting...")
+    club = await db[COLLECTION].find_one({"_id": normalize_id(club_id)})
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
+
+    # Just remove from requests
+    await db[COLLECTION].update_one(
+        {"_id": normalize_id(club_id)},
+        {"$pull": {"requests": normalize_id(request_id)}}
+    )
+
+    return {
+        "status": "rejected",
+        "club_id": club_id,
+        "user_id": request_id
+    }

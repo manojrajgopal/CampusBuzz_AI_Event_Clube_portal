@@ -30,7 +30,7 @@ function AppWrapper() {
 
   return (
     <>
-      {/* <Navbar /> */}
+      <Navbar />
       <Routes>
         {/* General */}
         <Route path="/" element={<Home />} />
