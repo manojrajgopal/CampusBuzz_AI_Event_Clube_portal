@@ -16,7 +16,6 @@ export default function ClubLogin() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", "club");
       let club_id = localStorage.setItem("club_id", res.data.club_id); // ✅ Add this
-      alert("Login successful!", club_id);
       navigate("/clubs"); // ✅ redirect to club page
     } catch (err) {
       alert("Login failed");
