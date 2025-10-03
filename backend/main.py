@@ -7,7 +7,8 @@ from routes import (auth_routes,
                       club_routes, 
                       registration_routes, 
                       student_routes,
-                       admin_routes)
+                       admin_routes,
+                       chatbot_routes as chatbot_router)
 
 from config.startup import register_startup_events  # Import startup tasks
 from routes.blog_routes import router as blog_router
@@ -38,7 +39,7 @@ app.include_router(registration_routes.router)
 app.include_router(student_routes.router)
 app.include_router(blog_router)
 app.include_router(admin_routes.router, prefix="/api")  # Admin routes under /api/admin
-
+app.include_router(chatbot_router.router)  # Chatbot routes
 
 
 # --- Root endpoint --

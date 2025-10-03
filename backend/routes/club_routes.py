@@ -386,6 +386,7 @@ async def get_club(club_id: str):
         print("To here")
         return club
 
+
     except Exception as e:
         print("Error in get_club:", str(e))
         raise HTTPException(status_code=400, detail="Invalid club ID")

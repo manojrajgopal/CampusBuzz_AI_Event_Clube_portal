@@ -16,7 +16,8 @@ import StudentProfile from "./pages/StudentProfile";
 import ClubDashboard from "./pages/ClubDashboard";
 import EventCreate from "./pages/EventCreate";
 import ClubCreate from "./pages/ClubCreate";
-
+import StudentDashboard from "./pages/StudentDashboard"; // ✅ import new page
+import Chatbot from "./pages/Chatbot"; 
 
 function AppWrapper() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ function AppWrapper() {
         {/* Student */}
         <Route path="/student/login" element={<StudentAuth />} />
         <Route path="/student/profile" element={<StudentProfile />} />
-
+        <Route path="/student/dashboard" element={<StudentDashboard />} /> {/* ✅ new route */}
         {/* Club */}
         <Route path="/clubs" element={<ClubMain />} />
         <Route path="/club/login" element={<ClubLogin />} />
@@ -57,6 +58,11 @@ function AppWrapper() {
         <Route path="/student/events" element={<StudentEvents />} />
         <Route path="/events/:eventId/participants" element={<EventParticipants />} />
         <Route path="/profile" element={<StudentProfile />} />
+
+        {/* Chatbot Route */}
+         <Route path="/chatbot" element={<Chatbot />} />
+
+
       </Routes>
 
     </>

@@ -1,3 +1,4 @@
+# backend/routes/event_routes.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from bson import ObjectId

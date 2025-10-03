@@ -68,11 +68,12 @@ JWT_SECRET="Random-secret-code"
 JWT_ALGORITHM=HS256
 JWT_EXP_MINUTES=10080
 
-
 8.Run the backend server:
 uvicorn main:app --reload
 # or
 python app.py
+
+
 
 9.Frontend Setup
 Navigate to frontend folder:

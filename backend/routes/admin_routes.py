@@ -1,3 +1,4 @@
+# admin_routes.py
 from fastapi import APIRouter, HTTPException, Depends
 from config.db import db
 from bson import ObjectId
