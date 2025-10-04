@@ -347,10 +347,10 @@ export default function Navbar() {
                 <h3 style={{ margin: "0 0 15px 0", color: "#333", borderBottom: "2px solid #4ecdc4", paddingBottom: "10px" }}>Student Profile</h3>
                 {profile && !isEditing ? (
                   <div style={{ lineHeight: "1.6" }}>
+                    <p><b>USN ID:</b> {profile.USN_id}</p>
                     <p><b>Name:</b> {profile.name}</p>
                     <p><b>Email:</b> {profile.email}</p>
                     <p><b>Mobile:</b> {profile.mobile}</p>
-                    <p><b>Student ID:</b> {profile.student_id}</p>
                     <p><b>Department:</b> {profile.department}</p>
                     <p><b>Year:</b> {profile.year}</p>
                     <p><b>Skills:</b> {profile.skills?.join(", ")}</p>
@@ -376,13 +376,13 @@ export default function Navbar() {
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} 
+                      style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />
                     <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} 
                       style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />
                     <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} 
                       style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />
                     <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} 
-                      style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />
-                    <input name="student_id" placeholder="Student ID" value={formData.student_id || ""} onChange={handleChange} 
                       style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />
                     <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} 
                       style={{ padding: "8px", borderRadius: "8px", border: "1px solid #ddd" }} />

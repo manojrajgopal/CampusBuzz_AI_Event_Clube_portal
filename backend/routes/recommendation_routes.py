@@ -9,8 +9,8 @@ router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-async def get_student_profile(student_id: str):
-    student = await db.users.find_one({"_id": normalize_id(student_id), "role": "student"})
+async def get_student_profile(USN_id: str):
+    student = await db.users.find_one({"_id": normalize_id(USN_id), "role": "student"})
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     return student
@@ -20,9 +20,9 @@ async def fetch_context():
     events = await db.events.find({}).to_list(100)
     return clubs, events
 
-@router.get("/clubs/{student_id}")
-async def recommend_clubs(student_id: str):
-    student = await get_student_profile(student_id)
+@router.get("/clubs/{USN_id}")
+async def recommend_clubs(USN_id: str):
+    student = await get_student_profile(USN_id)
     clubs, events = await fetch_context()
 
     # Prepare context for Gemini
@@ -39,9 +39,9 @@ async def recommend_clubs(student_id: str):
 
     return {"recommendations": text}
 
-@router.get("/events/{student_id}")
-async def recommend_events(student_id: str):
-    student = await get_student_profile(student_id)
+@router.get("/events/{USN_id}")
+async def recommend_events(USN_id: str):
+    student = await get_student_profile(USN_id)
     clubs, events = await fetch_context()
 
     prompt = f"""

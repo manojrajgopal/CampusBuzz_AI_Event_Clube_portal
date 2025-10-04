@@ -11,7 +11,7 @@ export default function StudentProfile() {
     name: "",
     email: "",
     mobile: "",
-    student_id: "",
+    USN_id: "",
     department: "",
     year: "",
     skills: "",
@@ -90,7 +90,7 @@ export default function StudentProfile() {
           <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} /> <br />
           <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} /> <br />
           <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} /> <br />
-          <input name="student_id" placeholder="Student ID" value={formData.student_id} onChange={handleChange} /> <br />
+          <input name="USN_id" placeholder="USN ID" value={formData.USN_id} onChange={handleChange} /> <br />
           <input name="department" placeholder="Department" value={formData.department} onChange={handleChange} /> <br />
           <input name="year" placeholder="Year" value={formData.year} onChange={handleChange} /> <br />
           <input name="skills" placeholder="Skills (comma separated)" value={formData.skills} onChange={handleChange} /> <br />
@@ -107,7 +107,7 @@ export default function StudentProfile() {
             <p><b>Name:</b> {profile.name}</p>
             <p><b>Email:</b> {profile.email}</p>
             <p><b>Mobile:</b> {profile.mobile}</p>
-            <p><b>Student ID:</b> {profile.student_id}</p>
+            <p><b>USN ID:</b> {profile.USN_id}</p>
             <p><b>Department:</b> {profile.department}</p>
             <p><b>Year:</b> {profile.year}</p>
             <p><b>Skills:</b> {profile.skills?.join(", ")}</p>

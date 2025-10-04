@@ -6,7 +6,7 @@ class StudentProfileIn(BaseModel):
     name: str
     email: str
     mobile: str
-    student_id: str
+    USN_id: str
     department: str
     year: str
     skills: List[str] = Field(default_factory=list)

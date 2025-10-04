@@ -14,19 +14,16 @@ export default function Home() {
   const threeContainerRef = useRef(null);
   const role = localStorage.getItem("role");
 
-  // ✅ make selectedClub a state (default from localStorage)
   const [selectedClub, setSelectedClub] = useState(
     localStorage.getItem("selectedClub") || ""
   );
 
-  // keep localStorage updated when state changes
   useEffect(() => {
     localStorage.setItem("selectedClub", selectedClub);
   }, [selectedClub]);
 
   // ------------------- THREE.JS BACKGROUND -------------------
   useEffect(() => {
-    // Initialize Three.js scene
     const initThreeScene = () => {
       if (typeof window !== "undefined" && threeContainerRef.current) {
         const THREE = window.THREE;
@@ -36,7 +33,6 @@ export default function Home() {
           return;
         }
 
-        // Scene setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -45,7 +41,6 @@ export default function Home() {
         renderer.setClearColor(0x000000, 0);
         threeContainerRef.current.appendChild(renderer.domElement);
         
-        // Create floating particles
         const particlesGeometry = new THREE.BufferGeometry();
         const particlesCount = 500;
         
@@ -72,7 +67,6 @@ export default function Home() {
         
         camera.position.z = 5;
         
-        // Mouse movement
         let mouseX = 0;
         let mouseY = 0;
         
@@ -81,7 +75,6 @@ export default function Home() {
           mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
         });
         
-        // Animation
         const clock = new THREE.Clock();
         
         const animate = () => {
@@ -89,7 +82,6 @@ export default function Home() {
           
           const elapsedTime = clock.getElapsedTime();
           
-          // Update particles
           particlesMesh.rotation.y = elapsedTime * 0.1;
           particlesMesh.rotation.x = elapsedTime * 0.05;
           
@@ -101,7 +93,6 @@ export default function Home() {
         
         animate();
         
-        // Handle resize
         const handleResize = () => {
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
@@ -110,7 +101,6 @@ export default function Home() {
         
         window.addEventListener('resize', handleResize);
         
-        // Cleanup
         return () => {
           window.removeEventListener('resize', handleResize);
           if (threeContainerRef.current && renderer.domElement) {
@@ -120,7 +110,6 @@ export default function Home() {
       }
     };
 
-    // Load Three.js dynamically
     if (!window.THREE) {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
@@ -131,14 +120,22 @@ export default function Home() {
     }
   }, []);
 
+
   // Fetch events, blogs, reviews
   useEffect(() => {
     API.get("/events")
-      .then((res) => setEvents(res.data.slice(0, 3)))
+      .then((res) => {
+        // ✅ Ensure events is always an array
+        const eventsData = res.data || [];
+        setEvents(Array.isArray(eventsData) ? eventsData.slice(0, 3) : []);
+      })
       .catch(() => setEvents([]));
 
     API.get("/blogs")
-      .then((res) => setBlogs(res.data.slice(0, 3)))
+      .then((res) => {
+        const blogsData = res.data || [];
+        setBlogs(Array.isArray(blogsData) ? blogsData.slice(0, 3) : []);
+      })
       .catch(() => setBlogs([]));
 
     setReviews([
@@ -147,13 +144,16 @@ export default function Home() {
       { id: 3, name: "Charlie", review: "Very smooth process and helpful team.", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" },
     ]);
 
-      API.get("/student/profile")
-        .then((res) => setProfile(res.data))
-        .catch((err) => console.log("Profile not found", err));
+    API.get("/student/profile")
+      .then((res) => setProfile(res.data))
+      .catch((err) => console.log("Profile not found", err));
 
-      API.get("/clubs")
-        .then((res) => setClubs(res.data))
-        .catch(() => setClubs([]));
+    API.get("/clubs")
+      .then((res) => {
+        const clubsData = res.data || [];
+        setClubs(Array.isArray(clubsData) ? clubsData : []);
+      })
+      .catch(() => setClubs([]));
 
     setTimeout(() => setIsLoading(false), 1500);
   }, [role]);
@@ -162,9 +162,11 @@ export default function Home() {
     async function fetchClubs() {
       try {
         const res = await API.get("/clubs");
-        setClubs(res.data);
+        const clubsData = res.data || [];
+        setClubs(Array.isArray(clubsData) ? clubsData : []);
       } catch (err) {
         console.error("Error fetching clubs:", err);
+        setClubs([]);
       }
     }
     fetchClubs();
@@ -201,6 +203,11 @@ export default function Home() {
       </div>
     );
   }
+
+  // ✅ Safe array access for rendering
+  const safeEvents = Array.isArray(events) ? events : [];
+  const safeBlogs = Array.isArray(blogs) ? blogs : [];
+  const safeClubs = Array.isArray(clubs) ? clubs : [];
 
   return (
     <div className="home-page">
@@ -268,9 +275,9 @@ export default function Home() {
           <h2>Upcoming Events</h2>
           <div className="underline"></div>
         </div>
-        {events.length > 0 ? (
+        {safeEvents.length > 0 ? (
           <div className="events-grid">
-            {events.map((e) => (
+            {safeEvents.map((e) => (
               <div key={e.id} className="event-card">
                 <div className="event-image">
                   <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Event" />
@@ -305,9 +312,9 @@ export default function Home() {
           <h2>Latest Blogs & Announcements</h2>
           <div className="underline"></div>
         </div>
-        {blogs.length > 0 ? (
+        {safeBlogs.length > 0 ? (
           <div className="blogs-grid">
-            {blogs.map((blog) => (
+            {safeBlogs.map((blog) => (
               <div key={blog._id} className="blog-card">
                 <div className="blog-image">
                   {blog.image ? (
@@ -318,7 +325,7 @@ export default function Home() {
                 </div>
                 <div className="blog-content">
                   <h3>{blog.title}</h3>
-                  <p>{blog.content.substring(0, 100)}...</p>
+                  <p>{blog.content?.substring(0, 100)}...</p>
                   <Link to={`/blogs`} className="read-more">Read More →</Link>
                 </div>
               </div>
@@ -350,8 +357,8 @@ export default function Home() {
               className="club-dropdown"
             >
               <option value="">-- Select a Club --</option>
-              {clubs.length > 0 ? (
-                clubs.map((c) => (
+              {safeClubs.length > 0 ? (
+                safeClubs.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>

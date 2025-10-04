@@ -18,7 +18,7 @@ class JoinClubApplication(BaseModel):
     name: str
     email: str
     mobile: str
-    student_id: str
+    USN_id: str
     department: str
     interested: bool
     description: Optional[str] = None
@@ -33,7 +33,7 @@ class CreateClubApplication(BaseModel):
     leader_name: str
     leader_email: str
     leader_mobile: str
-    leader_student_id: str
+    leader_USN_id: str
     leader_department: str
     leader_year: Optional[str] = None
     leader_description: Optional[str] = None
@@ -42,7 +42,7 @@ class CreateClubApplication(BaseModel):
     subleader_name: str
     subleader_email: str
     subleader_mobile: str
-    subleader_student_id: str
+    subleader_USN_id: str
     subleader_department: str
     subleader_year: Optional[str] = None
     subleader_description: Optional[str] = None

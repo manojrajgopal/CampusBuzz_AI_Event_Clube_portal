@@ -5,7 +5,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const userId = localStorage.getItem("userId"); // student id if logged in
+  const userId = localStorage.getItem("token") || "guest"; // student id if logged in
 
   async function sendMessage() {
     if (!input.trim()) return;
@@ -15,10 +15,15 @@ export default function Chatbot() {
     setInput("");
 
     try {
+      console.log("Sending question to backend:", input);
+      console.log("User ID:", userId);
       const res = await API.post("/chatbot/ask", {
         question: input,
         user_id: userId,
       });
+      console.log(res);
+      
+      console.log("Received response from backend:", res.data);
       const botMessage = { sender: "bot", text: res.data.answer };
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
