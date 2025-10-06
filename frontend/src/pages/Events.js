@@ -53,7 +53,7 @@ export default function Events() {
             <div className="title-underline"></div>
           </h1>
           <p className="hero-subtitle">
-            Discover and register for amazing events happening around you
+                     Discover and register for amazing events happening around you
           </p>
           <div className="search-bar">
             <input 
