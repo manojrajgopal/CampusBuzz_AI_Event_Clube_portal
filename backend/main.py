@@ -17,10 +17,7 @@ from routes.blog_routes import router as blog_router
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+origins = ["*"]
 
 # --- CORS middleware ---
 app.add_middleware(
