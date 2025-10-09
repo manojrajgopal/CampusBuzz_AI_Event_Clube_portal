@@ -37,6 +37,9 @@ function AppWrapper() {
         <Route path="/" element={<Home />} />
         <Route path="/events" element={<Events />} />
         <Route path="/blogs" element={<Blogs />} />
+    
+        <Route path="/#information" element={<Home />} />
+        <Route path="/#contact" element={<Home />} />
 
         {/* Student */}
         <Route path="/student/login" element={<StudentAuth />} />

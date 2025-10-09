@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
-import StudentAuth from "../pages/StudentAuth"; // Add this import
+import StudentAuth from "../pages/StudentAuth";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export default function Navbar() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [showLoginDropdown, setShowLoginDropdown] = useState(false);
-  const [showStudentLogin, setShowStudentLogin] = useState(false); // Add this state
+  const [showStudentLogin, setShowStudentLogin] = useState(false);
   const popupRef = useRef(null);
   const loginDropdownRef = useRef(null);
 
@@ -71,12 +71,31 @@ export default function Navbar() {
     navigate("/");
   };
 
-  // Smooth scroll function for anchor links
+  // Smooth scroll function for navbar links
   const handleSmoothScroll = (e, targetId) => {
     e.preventDefault();
-    const element = document.getElementById(targetId.replace('#', ''));
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    const targetSection = targetId.replace('#', '');
+    
+    if (window.location.pathname !== "/") {
+      // If we're not on home page, navigate to home first
+      navigate("/");
+      // Use a timeout to ensure navigation happens before scrolling and URL update
+      setTimeout(() => {
+        const element = document.getElementById(targetSection);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          // Update URL with hash
+          window.history.pushState(null, '', `/#${targetSection}`);
+        }
+      }, 100);
+    } else {
+      // We're already on home page, just scroll and update URL
+      const element = document.getElementById(targetSection);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        // Update URL with hash
+        window.history.pushState(null, '', `/#${targetSection}`);
+      }
     }
   };
 
@@ -132,6 +151,16 @@ export default function Navbar() {
       <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
         <Link 
           to="/" 
+          onClick={(e) => {
+            if (window.location.pathname === "/" && (window.location.hash || window.scrollY > 0)) {
+              e.preventDefault();
+              // If we're already on home page but scrolled down or has hash, scroll to top
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              // Clear any hash from URL
+              window.history.pushState(null, '', '/');
+            }
+            // If we're on a different page, let the regular navigation handle it
+          }}
           style={{ 
             color: "white", 
             textDecoration: "none", 
@@ -154,7 +183,8 @@ export default function Navbar() {
         </Link>
         
         <Link 
-          to="/information" 
+          to="/#information" 
+          onClick={(e) => handleSmoothScroll(e, '#information')}
           style={{ 
             color: "white", 
             textDecoration: "none", 
@@ -222,8 +252,8 @@ export default function Navbar() {
           Blogs
         </Link>
         
-        <a 
-          href="#contact" 
+        <Link 
+          to="/#contact"
           onClick={(e) => handleSmoothScroll(e, '#contact')}
           style={{ 
             color: "white", 
@@ -244,7 +274,7 @@ export default function Navbar() {
           }}
         >
           Contact
-        </a>
+        </Link>
       </div>
 
       {/* Auth Section - Left Side */}

@@ -34,7 +34,10 @@ export default function ClubLogin({ onClose }) {
 
   function handleClose() {
     setIsVisible(false);
-    setTimeout(() => onClose?.(), 300);
+    setTimeout(() => {
+      onClose?.();
+      navigate("/");
+    }, 300);
   }
 
   function handleChange(e) {
@@ -108,7 +111,7 @@ export default function ClubLogin({ onClose }) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
+        background: 'rgba(119, 119, 119, 0.7)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
@@ -122,7 +125,7 @@ export default function ClubLogin({ onClose }) {
       <FloatingShape 
         delay={0} 
         size="80px" 
-        color="linear-gradient(45deg, #8B4513, #A0522D)" 
+        color="linear-gradient(45deg, #c91188ff, #A0522D)" 
         position={{ top: '20%', left: '20%' }} 
       />
       <FloatingShape 
@@ -148,7 +151,7 @@ export default function ClubLogin({ onClose }) {
         ref={modalRef}
         className="club-login-modal"
         style={{
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'rgba(246, 246, 246, 0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '25px',
           padding: '40px',
@@ -171,7 +174,7 @@ export default function ClubLogin({ onClose }) {
             position: 'absolute',
             top: '20px',
             right: '20px',
-            background: 'rgba(255, 255, 255, 0.2)',
+            background: 'rgba(240, 240, 240, 1)',
             border: 'none',
             width: '40px',
             height: '40px',
@@ -181,7 +184,7 @@ export default function ClubLogin({ onClose }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#8B4513',
+            color: '#000802ff',
             transition: 'all 0.3s ease'
           }}
           onMouseEnter={(e) => {
@@ -209,13 +212,13 @@ export default function ClubLogin({ onClose }) {
           <div style={{
             width: "60px",
             height: "60px",
-            background: "linear-gradient(135deg, #f7f7f7ff 0%, #A0522D 100%)",
+            background: "linear-gradient(135deg, #af36f0ff 0%, #c908b2ff 100%)",
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 15px",
-            boxShadow: "0 8px 25px rgba(139, 69, 19, 0.3)",
+            boxShadow: "0 8px 25px rgba(11, 21, 13, 0.3)",
             transform: "rotate(15deg)"
           }}>
             <span style={{ 
@@ -347,7 +350,7 @@ export default function ClubLogin({ onClose }) {
             style={{
               width: '100%',
               padding: '16px',
-              background: 'linear-gradient(135deg, #411862ff 0%, #A0522D 100%)',
+              background: 'linear-gradient(135deg, #8703f4ff 0%, #ea0e75ff 100%)',
               border: 'none',
               borderRadius: '15px',
               color: 'white',
@@ -355,7 +358,7 @@ export default function ClubLogin({ onClose }) {
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
-              boxShadow: '0 8px 25px rgba(139, 69, 19, 0.3)',
+              boxShadow: '0 8px 25px rgba(244, 7, 98, 0.24)',
               marginBottom: '20px'
             }}
             onMouseEnter={(e) => {
@@ -367,7 +370,7 @@ export default function ClubLogin({ onClose }) {
               e.target.style.boxShadow = '0 8px 25px rgba(139, 69, 19, 0.3)';
             }}
           >
-            Login to Club Portal
+            Login to Club
           </button>
 
           {/* Help Text */}

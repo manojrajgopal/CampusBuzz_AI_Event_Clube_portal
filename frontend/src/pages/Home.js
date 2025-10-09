@@ -11,6 +11,7 @@ export default function Home() {
   const [profile, setProfile] = useState(null);
   const [clubs, setClubs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const threeContainerRef = useRef(null);
   const role = localStorage.getItem("role");
 
@@ -120,7 +121,6 @@ export default function Home() {
     }
   }, []);
 
-
   // Fetch events, blogs, reviews
   useEffect(() => {
     API.get("/events")
@@ -195,6 +195,10 @@ export default function Home() {
     }
   };
 
+  const toggleChatbot = () => {
+    setIsChatbotOpen(!isChatbotOpen);
+  };
+
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -214,40 +218,190 @@ export default function Home() {
       {/* Three.js Background */}
       <div ref={threeContainerRef} className="three-background"></div>
       
+      {/* Chatbot Button */}
+      <div className={`chatbot-button ${isChatbotOpen ? 'active' : ''}`} onClick={toggleChatbot}>
+        <div className="chatbot-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+          </svg>
+        </div>
+        <span className="chatbot-pulse"></span>
+      </div>
+      
+      {/* Chatbot Popup */}
+      {isChatbotOpen && (
+        <div className="chatbot-popup">
+          <div className="chatbot-header">
+            <h3>CampusBuzz Assistant</h3>
+            <button className="close-chatbot" onClick={toggleChatbot}>×</button>
+          </div>
+          <div className="chatbot-content">
+            <div className="chatbot-message">
+              <div className="chatbot-avatar">
+                <img src="https://images.unsplash.com/photo-1589254065878-42c9da997008?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Assistant" />
+              </div>
+              <div className="message-bubble">
+                <p>Hi there! How can I help you with campus activities today?</p>
+              </div>
+            </div>
+            <div className="chatbot-suggestions">
+              <button className="suggestion-btn">Upcoming Events</button>
+              <button className="suggestion-btn">Club Information</button>
+              <button className="suggestion-btn">Blog Posts</button>
+            </div>
+          </div>
+          <div className="chatbot-input">
+            <input type="text" placeholder="Type your message..." />
+            <button className="send-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
+          <div className="hero-badge">Campus Life Platform</div>
           <h1>Welcome to <span className="brand">CampusBuzz</span></h1>
           <p>Your one-stop platform for campus activities, events, clubs, and more.</p>
           <div className="hero-buttons">
             <Link to="/events" className="btn-primary">Explore Events</Link>
             <Link to="/blogs" className="btn-outline">Read Blogs</Link>
           </div>
+          <div className="hero-stats">
+            <div className="stat">
+              <span className="stat-number">50+</span>
+              <span className="stat-label">Events</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">20+</span>
+              <span className="stat-label">Clubs</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">1000+</span>
+              <span className="stat-label">Students</span>
+            </div>
+          </div>
         </div>
-        <div className="hero-image">
-          <img src="images/reporterBoy.png" alt="Campus Events Icon" />
+        <div className="hero-visual">
+          <div className="floating-card card-1">
+            <div className="card-icon">🎉</div>
+            <p>Events</p>
+          </div>
+          <div className="floating-card card-2">
+            <div className="card-icon">📝</div>
+            <p>Blogs</p>
+          </div>
+          <div className="floating-card card-3">
+            <div className="card-icon">👥</div>
+            <p>Clubs</p>
+          </div>
+          <div className="hero-image">
+            <img src="images/reporterBoy.png" alt="Campus Events Icon" />
+          </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <section id="information" className="section about-section">
-        <div className="section-header">
-          <h2>About CampusBuzz</h2>
-          <div className="underline"></div>
-        </div>
-        <div className="about-content">
-          <p>
-            CampusBuzz is your one-stop platform for staying updated with all campus 
-            activities. From cultural events to hackathons, student blogs to club 
-            announcements, we bring everything together in one place.
-          </p>
-          <p>
-            Students can register for events, join clubs, and explore blogs, while 
-            clubs and admins manage activities with ease. CampusBuzz helps in 
-            connecting the entire campus community.
-          </p>
-        </div>
-      </section>
+
+<div className="information-section" id="information">
+  <div className="about-grid">
+    {/* Existing cards remain unchanged */}
+    <div className="about-card">
+      <div className="about-icon">📅</div>
+      <h3>Events</h3>
+      <p>Access and participate in a variety of campus events ranging from academic workshops to cultural festivals, all in one platform.</p>
+    </div>
+    
+    <div className="about-card">
+      <div className="about-icon">🏆</div>
+      <h3>Clubs & Societies</h3>
+      <p>Discover and join student clubs that match your interests, from technical societies to hobby groups, fostering collaboration and personal growth.</p>
+    </div>
+    
+    {/* New enhanced content cards */}
+    <div className="about-card">
+      <div className="about-icon">🚀</div>
+      <h3>Student Growth</h3>
+      <p>Our platform is designed to foster holistic development by providing opportunities for skill enhancement, leadership development, and networking with peers and professionals across various domains.</p>
+    </div>
+    
+    <div className="about-card">
+      <div className="about-icon">🤝</div>
+      <h3>Collaboration Hub</h3>
+      <p>CampusConnect serves as a central hub where students can find collaborators for projects, form teams for competitions, and connect with like-minded individuals who share similar academic and extracurricular interests.</p>
+    </div>
+    
+    <div className="about-card">
+      <div className="about-icon">💼</div>
+      <h3>Career Preparation</h3>
+      <p>Participate in workshops, hackathons, and industry interactions that build your resume and prepare you for future career opportunities while still in college.</p>
+    </div>
+    
+    <div className="about-card">
+      <div className="about-icon">🌐</div>
+      <h3>Campus Community</h3>
+      <p>Join a vibrant digital campus community where you can stay updated with all campus activities, share achievements, and contribute to making your college experience more engaging and memorable.</p>
+    </div>
+  </div>
+  
+  {/* Detailed Event Information Section */}
+  <div className="event-details">
+    <h2>Explore Campus Events & Activities</h2>
+    <div className="event-categories">
+      <div className="event-category">
+        <h3>💻 Hackathons & Coding Events</h3>
+        <ul>
+          <li><strong>24-Hour Codeathons:</strong> Intensive coding competitions where teams solve real-world problems</li>
+          <li><strong>Algorithm Challenges:</strong> Weekly coding contests to sharpen problem-solving skills</li>
+          <li><strong>Web Development Marathons:</strong> Build complete web applications in limited timeframes</li>
+          <li><strong>AI/ML Competitions:</strong> Work on cutting-edge artificial intelligence projects</li>
+          <li><strong>App Development Sprints:</strong> Create mobile applications for specific use cases</li>
+        </ul>
+        <p><strong>Benefits:</strong> Enhance technical skills, build portfolio projects, network with tech companies, win prizes and recognition.</p>
+      </div>
+      
+      <div className="event-category">
+        <h3>🎭 Cultural & Arts Events</h3>
+        <ul>
+          <li><strong>Dance Competitions:</strong> Various styles including contemporary, hip-hop, classical, and fusion</li>
+          <li><strong>Music Festivals:</strong> Band performances, solo singing, instrumental competitions</li>
+          <li><strong>Drama & Theater:</strong> Stage plays, street plays, improvisation workshops</li>
+          <li><strong>Art Exhibitions:</strong> Showcasing paintings, sculptures, digital art, and photography</li>
+          <li><strong>Literary Events:</strong> Poetry slams, debate competitions, creative writing workshops</li>
+        </ul>
+        <p><strong>Benefits:</strong> Express creativity, relieve academic stress, discover hidden talents, build confidence in performance.</p>
+      </div>
+      
+      <div className="event-category">
+        <h3>⚽ Sports & Fitness Events</h3>
+        <ul>
+          <li><strong>Inter-College Tournaments:</strong> Cricket, football, basketball, volleyball championships</li>
+          <li><strong>Individual Sports:</strong> Badminton, table tennis, chess, athletics competitions</li>
+          <li><strong>Adventure Sports:</strong> Trekking, rock climbing, marathon runs</li>
+          <li><strong>Fitness Challenges:</strong> Yoga sessions, zumba workshops, fitness bootcamps</li>
+          <li><strong>E-Sports:</strong> Gaming tournaments featuring popular competitive video games</li>
+        </ul>
+        <p><strong>Benefits:</strong> Maintain physical health, develop teamwork skills, learn sportsmanship, compete at various levels.</p>
+      </div>
+      
+      <div className="event-category">
+        <h3>🔬 Academic & Technical Events</h3>
+        <ul>
+          <li><strong>Technical Workshops:</strong> Hands-on sessions on emerging technologies</li>
+          <li><strong>Research Symposiums:</strong> Present and discuss academic research projects</li>
+          <li><strong>Guest Lectures:</strong> Industry experts and alumni sharing insights</li>
+          <li><strong>Project Exhibitions:</strong> Showcase innovative student projects</li>
+          <li><strong>Case Study Competitions:</strong> Solve real business and technical challenges</li>
+        </ul>
+        <p><strong>Benefits:</strong> Deepen subject knowledge, gain practical skills, interact with experts, enhance academic credentials.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
 
       {/* Student Profile Summary */}
       {profile && (
@@ -262,8 +416,17 @@ export default function Home() {
             </div>
             <div className="profile-info">
               <h3>{profile.name}</h3>
-              <p><span className="label">Department:</span> {profile.department}</p>
-              <p><span className="label">Year:</span> {profile.year}</p>
+              <div className="profile-details">
+                <div className="profile-detail">
+                  <span className="label">Department:</span> {profile.department}
+                </div>
+                <div className="profile-detail">
+                  <span className="label">Year:</span> {profile.year}
+                </div>
+              </div>
+            </div>
+            <div className="profile-actions">
+              <Link to="/profile" className="btn-outline">View Full Profile</Link>
             </div>
           </div>
         </section>
@@ -281,12 +444,15 @@ export default function Home() {
               <div key={e.id} className="event-card">
                 <div className="event-image">
                   <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Event" />
+                  <div className="event-date">
+                    <span className="date-day">{new Date(e.date).getDate()}</span>
+                    <span className="date-month">{new Date(e.date).toLocaleString('default', { month: 'short' })}</span>
+                  </div>
                 </div>
                 <div className="event-content">
                   <h3>{e.title}</h3>
                   <p>{e.description}</p>
                   <div className="event-details">
-                    <span className="event-date">📅 {new Date(e.date).toLocaleString()}</span>
                     <span className="event-venue">📍 {e.venue}</span>
                   </div>
                   <button className="btn-primary" onClick={() => registerEvent(e.id)}>Register Now</button>
@@ -397,6 +563,11 @@ export default function Home() {
               <div className="review-content">
                 <p>"{r.review}"</p>
               </div>
+              <div className="review-rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} className="star">★</span>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -411,15 +582,24 @@ export default function Home() {
         <div className="contact-info">
           <div className="contact-item">
             <div className="contact-icon">📍</div>
-            <p>ABC University, City, State</p>
+            <div className="contact-details">
+              <h4>Address</h4>
+              <p>ABC University, City, State</p>
+            </div>
           </div>
           <div className="contact-item">
             <div className="contact-icon">📞</div>
-            <p>+91 9876543210</p>
+            <div className="contact-details">
+              <h4>Phone</h4>
+              <p>+91 9876543210</p>
+            </div>
           </div>
           <div className="contact-item">
             <div className="contact-icon">📧</div>
-            <p>support@campusbuzz.com</p>
+            <div className="contact-details">
+              <h4>Email</h4>
+              <p>support@campusbuzz.com</p>
+            </div>
           </div>
         </div>
       </section>

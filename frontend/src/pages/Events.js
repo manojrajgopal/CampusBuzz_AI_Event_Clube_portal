@@ -146,10 +146,6 @@ export default function Events() {
                       <span className="btn-icon">🎯</span>
                       Register Now
                     </button>
-                    <button className="btn btn-secondary">
-                      <span className="btn-icon">❤️</span>
-                      Save
-                    </button>
                   </div>
                 </div>
               </div>
@@ -373,7 +369,7 @@ export default function Events() {
         }
 
         .event-card {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(226, 220, 255, 0.95);
           backdrop-filter: blur(10px);
           border-radius: 20px;
           overflow: hidden;
