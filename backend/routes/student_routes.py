@@ -59,3 +59,27 @@ async def get_profile_route(user=Depends(require_role(["student"]))):
 async def check_profile(user=Depends(require_role(["student"]))):
     completed = await is_profile_completed(user["_id"])
     return {"profile_completed": completed}
+
+def convert_objectid(doc: dict):
+    """Convert ObjectId fields to strings for JSON serialization"""
+    for key, value in doc.items():
+        if isinstance(value, ObjectId):
+            doc[key] = str(value)
+        elif isinstance(value, list):
+            # recursively convert if list contains ObjectIds
+            doc[key] = [str(v) if isinstance(v, ObjectId) else v for v in value]
+        elif isinstance(value, dict):
+            doc[key] = convert_objectid(value)
+    return doc
+
+@router.get("/students")
+async def list_of_students():
+    students = {}
+    cursor = db["student_profiles"].find({})
+    async for doc in cursor:
+        usn = doc.get("USN_id")
+        if usn:
+            doc.pop("_id", None)  # remove MongoDB _id if not needed
+            doc = convert_objectid(doc)
+            students[usn] = doc
+    return students
