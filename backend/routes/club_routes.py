@@ -416,18 +416,27 @@ async def getClubs():
         print("Error fetching clubs:", e)
         return {"error": "Failed to fetch clubs"}
 
+def convert_objectid(data):
+    if isinstance(data, list):
+        return [convert_objectid(item) for item in data]
+    elif isinstance(data, dict):
+        return {k: convert_objectid(v) for k, v in data.items()}
+    elif isinstance(data, ObjectId):
+        return str(data)
+    elif isinstance(data, datetime):
+        return data.isoformat()
+    else:
+        return data
+    
 @router.get("/applications", dependencies=[Depends(require_role(["admin"]))])
 async def get_pending_applications():
     try:
-        # Fetch all documents from MongoDB as a list
         apps = await db["club_create_applications"].find({}).to_list(length=None)
-        # Convert ObjectId fields to strings if you want
-        for app in apps:
-            if "_id" in app:
-                app["_id"] = str(app["_id"])
-            if "user_id" in app:
-                app["user_id"] = str(app["user_id"])
-        return apps
+
+        # Recursively convert ObjectIds and datetimes
+        converted_apps = [convert_objectid(app) for app in apps]
+
+        return converted_apps
     except Exception as e:
         print(f"Error fetching applications: {e}")
         raise HTTPException(status_code=500, detail="Error fetching applications")
