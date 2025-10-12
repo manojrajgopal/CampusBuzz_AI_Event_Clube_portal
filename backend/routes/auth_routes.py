@@ -1,3 +1,4 @@
+# backend/routes/auth_routes.py
 from fastapi import APIRouter, HTTPException, status
 from passlib.context import CryptContext
 from datetime import datetime

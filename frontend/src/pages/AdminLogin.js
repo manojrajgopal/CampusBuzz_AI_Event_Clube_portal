@@ -78,6 +78,7 @@ export default function AdminLogin({ onClose }) {
     try {
       const res = await API.post("/auth/admin/login", form);
       localStorage.setItem("token", res.data.token || res.data.access_token);
+      console.log("Admin login response:", res);
       localStorage.setItem("role", res.data.role || "admin");
       localStorage.setItem("adminEmail", form.email);
       

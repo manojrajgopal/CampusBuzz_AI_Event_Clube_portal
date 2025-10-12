@@ -1,3 +1,4 @@
+# backend/main.py
 import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware

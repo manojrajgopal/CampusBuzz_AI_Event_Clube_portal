@@ -313,7 +313,7 @@ export default function StudentAuth({ onClose }) {
             transform: wrapperActive ? 'translateZ(20px)' : 'translateZ(-20px)',
             transition: 'transform 0.6s ease 0.3s'
           }}>
-            {isSignup ? "Join CampusConnect" : "Welcome Back"}
+            {isSignup ? "Join CampusBuzz" : "Welcome Back"}
           </h2>
           <p style={{ 
             color: '#666', 

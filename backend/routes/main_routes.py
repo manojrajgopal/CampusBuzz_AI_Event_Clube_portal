@@ -1,3 +1,4 @@
+# backend/routes/main_routes.py
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/api/main", tags=["main"])
