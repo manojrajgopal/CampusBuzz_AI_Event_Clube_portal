@@ -23,3 +23,4 @@ email-validator==2.1.1
 qrcode
 openai
 google-generativeai
+httpx
