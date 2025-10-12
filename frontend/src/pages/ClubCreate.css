@@ -69,14 +69,14 @@
 }
 
 .leader-card {
-  background: #eb6378;
+  background: #f8fafc;
   padding: 24px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
 
 .leader-role {
-  color: #4a5568;
+  color: #2d3748;
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 16px;
@@ -140,6 +140,36 @@
   display: block;
 }
 
+/* USN Validation Styles */
+.usn-validation-status {
+  margin-top: 8px;
+}
+
+.validating {
+  color: #ed8936;
+  font-weight: 500;
+}
+
+.valid {
+  color: #38a169;
+  font-weight: 500;
+}
+
+.invalid {
+  color: #e53e3e;
+  font-weight: 500;
+}
+
+.student-details {
+  margin-top: 4px;
+}
+
+.student-details small {
+  display: block;
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
 .form-actions {
   display: flex;
   gap: 16px;
@@ -170,6 +200,7 @@
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+  background: #a0aec0;
 }
 
 .btn-secondary {

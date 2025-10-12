@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredCard, setHoveredCard] = useState(null);
 
   useEffect(() => {
     API.get("/events").then((res) => {
@@ -14,15 +13,6 @@ export default function Events() {
       setLoading(false);
     });
   }, []);
-
-  async function register(eventId) {
-    try {
-      await API.post(`/events/${eventId}/register`, { event_id: eventId });
-      alert("Registered successfully!");
-    } catch {
-      alert("Registration failed");
-    }
-  }
 
   async function registerEvent(eventId) {
     try {
@@ -38,34 +28,26 @@ export default function Events() {
   const safeEvents = Array.isArray(events) ? events : [];
 
   return (
-    <div className="events-container">
+    <div className="events-page">
       {/* Animated Background */}
-      <div className="animated-bg">
-        <div className="bg-shape shape-1"></div>
-        <div className="bg-shape shape-2"></div>
-        <div className="bg-shape shape-3"></div>
+      <div className="animated-background">
+        <div className="floating-shape shape-1"></div>
+        <div className="floating-shape shape-2"></div>
+        <div className="floating-shape shape-3"></div>
+        <div className="floating-shape shape-4"></div>
+        <div className="gradient-overlay"></div>
       </div>
 
       {/* Header Section */}
-      <header className="hero-section">
-        <div className="hero-content">
-          <h1 className="hero-title">
-            <span className="title-gradient">Upcoming Events</span>
+      <header className="page-header">
+        <div className="header-content">
+          <h1 className="page-title">
+            <span className="title-text">Upcoming Events</span>
             <div className="title-underline"></div>
           </h1>
-          <p className="hero-subtitle">
-                     Discover and register for amazing events happening around you
+          <p className="page-subtitle">
+            Discover and register for amazing events happening around you
           </p>
-          <div className="search-bar">
-            <input 
-              type="text" 
-              placeholder="Search events..." 
-              className="search-input"
-            />
-            <button className="search-btn">
-              <span className="search-icon">🔍</span>
-            </button>
-          </div>
         </div>
       </header>
 
@@ -78,78 +60,13 @@ export default function Events() {
           </div>
         ) : safeEvents.length > 0 ? (
           <div className="events-grid">
-            {safeEvents.map((e, index) => (
-              <div 
-                key={e.id}
-                className={`event-card ${hoveredCard === e.id ? 'card-hovered' : ''}`}
-                onMouseEnter={() => setHoveredCard(e.id)}
-                onMouseLeave={() => setHoveredCard(null)}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {/* Card Header with Image */}
-                <div className="card-header">
-                  <div className="card-image">
-                    <img 
-                      src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" 
-                      alt="Event" 
-                    />
-                    <div className="image-overlay"></div>
-                  </div>
-                  <div className="card-badges">
-                    <span className="badge featured">Featured</span>
-                    <span className="badge category">Conference</span>
-                  </div>
-                  <div className="card-date">
-                    <span className="date-day">
-                      {new Date(e.date).getDate()}
-                    </span>
-                    <span className="date-month">
-                      {new Date(e.date).toLocaleString('en-US', { month: 'short' })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card Content */}
-                <div className="card-content">
-                  <h3 className="event-title">{e.title}</h3>
-                  <p className="event-description">{e.description}</p>
-                  
-                  <div className="event-meta">
-                    <div className="meta-item">
-                      <span className="meta-icon">⏰</span>
-                      <span className="meta-text">
-                        {new Date(e.date).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-icon">📍</span>
-                      <span className="meta-text">{e.venue}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-icon">👥</span>
-                      <span className="meta-text">120 Attendees</span>
-                    </div>
-                  </div>
-
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '75%' }}></div>
-                    <span className="progress-text">75% Booked</span>
-                  </div>
-
-                  <div className="card-actions">
-                    <button 
-                      className="btn btn-primary register-btn"
-                      onClick={() => registerEvent(e.id)}
-                    >
-                      <span className="btn-icon">🎯</span>
-                      Register Now
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {safeEvents.map((event, index) => (
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                onRegister={registerEvent}
+                index={index}
+              />
             ))}
           </div>
         ) : (
@@ -166,52 +83,21 @@ export default function Events() {
           </div>
         )}
 
-        {/* Stats Section */}
-        <div className="stats-section">
-          <div className="stat-card">
-            <div className="stat-icon">🎉</div>
-            <div className="stat-number">500+</div>
-            <div className="stat-label">Events Hosted</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-number">10K+</div>
-            <div className="stat-label">Happy Attendees</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">⭐</div>
-            <div className="stat-number">4.9</div>
-            <div className="stat-label">Average Rating</div>
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="cta-section">
-          <div className="cta-card">
-            <div className="cta-content">
-              <h3>Never Miss an Event</h3>
-              <p>Subscribe to our newsletter and get notified about upcoming events</p>
-              <div className="cta-form">
-                <input type="email" placeholder="Enter your email" className="cta-input" />
-                <button className="btn btn-primary">Subscribe</button>
-              </div>
-            </div>
-            <div className="cta-image">
-              <div className="cta-graphic">📧</div>
-            </div>
-          </div>
-        </div>
+        {/* Events Highlights Section */}
+        <EventsHighlights />
       </main>
 
       <style jsx>{`
-        .events-container {
+        .events-page {
           min-height: 100vh;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           position: relative;
           overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .animated-bg {
+        /* Animated Background */
+        .animated-background {
           position: absolute;
           top: 0;
           left: 0;
@@ -220,125 +106,130 @@ export default function Events() {
           z-index: 0;
         }
 
-        .bg-shape {
+        .floating-shape {
           position: absolute;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.1);
-          animation: float 6s ease-in-out infinite;
+          animation: float 8s ease-in-out infinite;
         }
 
         .shape-1 {
-          width: 200px;
-          height: 200px;
+          width: 120px;
+          height: 120px;
           top: 10%;
           left: 5%;
           animation-delay: 0s;
         }
 
         .shape-2 {
-          width: 150px;
-          height: 150px;
+          width: 80px;
+          height: 80px;
           top: 60%;
-          right: 10%;
+          right: 8%;
           animation-delay: 2s;
         }
 
         .shape-3 {
-          width: 100px;
-          height: 100px;
-          bottom: 10%;
-          left: 15%;
+          width: 60px;
+          height: 60px;
+          bottom: 20%;
+          left: 10%;
           animation-delay: 4s;
         }
 
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
+        .shape-4 {
+          width: 100px;
+          height: 100px;
+          top: 30%;
+          right: 15%;
+          animation-delay: 6s;
         }
 
-        .hero-section {
+        .gradient-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: 
+            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.15) 0%, transparent 50%);
+          animation: gradientShift 12s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+          }
+        }
+
+        @keyframes gradientShift {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+
+        /* Header Section */
+        .page-header {
           position: relative;
-          padding: 80px 20px 60px;
+          z-index: 1;
+          padding: 5rem 2rem 3rem;
           text-align: center;
           color: white;
         }
 
-        .hero-content {
+        .header-content {
           max-width: 800px;
           margin: 0 auto;
         }
 
-        .hero-title {
-          font-size: 4rem;
-          font-weight: 800;
+        .page-title {
+          font-size: 3.5rem;
+          font-weight: 700;
           margin-bottom: 1rem;
           position: relative;
         }
 
-        .title-gradient {
-          background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+        .title-text {
+          background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
         .title-underline {
-          width: 100px;
+          width: 80px;
           height: 4px;
           background: linear-gradient(90deg, #ff6b6b, #ffd93d);
           margin: 1rem auto;
           border-radius: 2px;
         }
 
-        .hero-subtitle {
+        .page-subtitle {
           font-size: 1.3rem;
-          margin-bottom: 2rem;
           opacity: 0.9;
-        }
-
-        .search-bar {
-          display: flex;
-          max-width: 500px;
+          max-width: 600px;
           margin: 0 auto;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border-radius: 50px;
-          padding: 5px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          line-height: 1.6;
         }
 
-        .search-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          padding: 15px 20px;
-          color: white;
-          font-size: 1rem;
-          outline: none;
-        }
-
-        .search-input::placeholder {
-          color: rgba(255, 255, 255, 0.7);
-        }
-
-        .search-btn {
-          background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-          border: none;
-          border-radius: 50%;
-          width: 50px;
-          height: 50px;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
-
-        .search-btn:hover {
-          transform: scale(1.05);
-        }
-
+        /* Main Content */
         .main-content {
           position: relative;
           z-index: 1;
-          padding: 0 20px 0px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 2rem 4rem;
         }
 
         .loading-container {
@@ -362,19 +253,198 @@ export default function Events() {
           100% { transform: rotate(360deg); }
         }
 
+        .loading-text {
+          font-size: 1.1rem;
+          color: white;
+        }
+
+        /* Events Grid */
         .events-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
           gap: 2rem;
           margin-bottom: 4rem;
         }
 
-        .event-card {
-          background: rgba(226, 220, 255, 0.95);
+        /* Empty State */
+        .empty-state {
+          text-align: center;
+          padding: 4rem 2rem;
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(10px);
           border-radius: 20px;
+          margin: 2rem 0;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-icon {
+          font-size: 4rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .empty-title {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: #333;
+          margin-bottom: 1rem;
+        }
+
+        .empty-description {
+          color: #666;
+          margin-bottom: 2rem;
+          font-size: 1.1rem;
+          max-width: 400px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .empty-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+        }
+
+        .btn {
+          padding: 0.8rem 1.5rem;
+          border: none;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline {
+          background: transparent;
+          color: #667eea;
+          border: 2px solid #667eea;
+        }
+
+        .btn-outline:hover {
+          background: #667eea;
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          .page-header {
+            padding: 4rem 1.5rem 2rem;
+          }
+
+          .page-title {
+            font-size: 2.5rem;
+          }
+
+          .main-content {
+            padding: 0 1.5rem 3rem;
+          }
+
+          .events-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+
+          .empty-actions {
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .btn {
+            min-width: 200px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .page-title {
+            font-size: 2rem;
+          }
+
+          .page-subtitle {
+            font-size: 1.1rem;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Event Card Component
+function EventCard({ event, onRegister, index }) {
+  const handleRegister = () => {
+    onRegister(event.id);
+  };
+
+  return (
+    <div 
+      className="event-card"
+      style={{ animationDelay: `${index * 0.1}s` }}
+    >
+      <div className="card-header">
+        <div className="card-image">
+          <img 
+            src={event.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80"} 
+            alt={event.title}
+          />
+          <div className="image-overlay"></div>
+        </div>
+        <div className="card-date">
+          <span className="date-day">
+            {new Date(event.date).getDate()}
+          </span>
+          <span className="date-month">
+            {new Date(event.date).toLocaleString('en-US', { month: 'short' })}
+          </span>
+        </div>
+      </div>
+      
+      <div className="card-content">
+        <h3 className="event-title">{event.title}</h3>
+        <p className="event-description">{event.description}</p>
+        
+        <div className="event-meta">
+          <div className="meta-item">
+            <span className="meta-icon">⏰</span>
+            <span className="meta-text">
+              {new Date(event.date).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+          </div>
+          
+          <div className="meta-item">
+            <span className="meta-icon">📍</span>
+            <span className="meta-text">{event.venue}</span>
+          </div>
+        </div>
+
+        <div className="card-actions">
+          <button 
+            className="register-btn"
+            onClick={handleRegister}
+          >
+            <span className="btn-icon">🎯</span>
+            Register Now
+          </button>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .event-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
           transition: all 0.3s ease;
           border: 1px solid rgba(255, 255, 255, 0.2);
           animation: cardEntrance 0.6s ease-out;
@@ -393,7 +463,7 @@ export default function Events() {
         }
 
         .event-card:hover {
-          transform: translateY(-10px) scale(1.02);
+          transform: translateY(-8px);
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
@@ -411,7 +481,7 @@ export default function Events() {
         }
 
         .event-card:hover .card-image img {
-          transform: scale(1.1);
+          transform: scale(1.05);
         }
 
         .image-overlay {
@@ -420,33 +490,7 @@ export default function Events() {
           left: 0;
           right: 0;
           bottom: 0;
-          background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 100%);
-        }
-
-        .card-badges {
-          position: absolute;
-          top: 1rem;
-          left: 1rem;
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .badge {
-          padding: 0.4rem 0.8rem;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          backdrop-filter: blur(10px);
-        }
-
-        .badge.featured {
-          background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-          color: white;
-        }
-
-        .badge.category {
-          background: rgba(255, 255, 255, 0.9);
-          color: #333;
+          background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
         }
 
         .card-date {
@@ -458,11 +502,12 @@ export default function Events() {
           border-radius: 12px;
           text-align: center;
           min-width: 60px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .date-day {
           display: block;
-          font-size: 1.5rem;
+          font-size: 1.4rem;
           font-weight: 700;
           color: #333;
         }
@@ -471,6 +516,7 @@ export default function Events() {
           font-size: 0.8rem;
           color: #666;
           font-weight: 600;
+          text-transform: uppercase;
         }
 
         .card-content {
@@ -490,7 +536,7 @@ export default function Events() {
           line-height: 1.6;
           margin-bottom: 1.5rem;
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
@@ -520,257 +566,252 @@ export default function Events() {
           font-weight: 500;
         }
 
-        .progress-bar {
-          background: #e0e0e0;
-          border-radius: 10px;
-          height: 8px;
-          margin-bottom: 1rem;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .progress-fill {
-          background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-          height: 100%;
-          border-radius: 10px;
-          transition: width 0.3s ease;
-        }
-
-        .progress-text {
-          position: absolute;
-          right: 0;
-          top: -20px;
-          font-size: 0.8rem;
-          color: #666;
-          font-weight: 600;
-        }
-
         .card-actions {
           display: flex;
           gap: 0.8rem;
         }
 
-        .btn {
-          padding: 0.8rem 1.2rem;
+        .register-btn {
+          flex: 1;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
           border: none;
-          border-radius: 12px;
+          border-radius: 10px;
+          padding: 0.8rem 1.2rem;
           font-weight: 600;
           font-size: 0.9rem;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          flex: 1;
           justify-content: center;
         }
 
-        .btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .btn-primary:hover {
+        .register-btn:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
+      `}</style>
+    </div>
+  );
+}
 
-        .btn-secondary {
-          background: rgba(102, 126, 234, 0.1);
-          color: #667eea;
-          border: 1px solid rgba(102, 126, 234, 0.2);
-        }
+// Events Highlights Component
+function EventsHighlights() {
+  const highlights = [
+    {
+      icon: "🎉",
+      number: "500+",
+      label: "Events Hosted"
+    },
+    {
+      icon: "👥",
+      number: "10K+",
+      label: "Happy Attendees"
+    },
+    {
+      icon: "⭐",
+      number: "4.9",
+      label: "Average Rating"
+    },
+    {
+      icon: "🌍",
+      number: "50+",
+      label: "Cities Covered"
+    }
+  ];
 
-        .btn-secondary:hover {
-          background: rgba(102, 126, 234, 0.2);
-        }
+  return (
+    <section className="highlights-section">
+      <div className="highlights-content">
+        <h2 className="highlights-title">Why Choose Our Events?</h2>
+        <p className="highlights-subtitle">
+          We're committed to delivering exceptional experiences that bring people together and create lasting memories.
+        </p>
+        
+        <div className="highlights-grid">
+          {highlights.map((highlight, index) => (
+            <div 
+              key={index}
+              className="highlight-card"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <div className="highlight-icon">{highlight.icon}</div>
+              <div className="highlight-number">{highlight.number}</div>
+              <div className="highlight-label">{highlight.label}</div>
+            </div>
+          ))}
+        </div>
 
-        .btn-outline {
-          background: transparent;
-          color: #667eea;
-          border: 2px solid #667eea;
-        }
+        <div className="highlights-cta">
+          <h3>Never Miss an Event</h3>
+          <p>Subscribe to our newsletter and get notified about upcoming events</p>
+          <div className="cta-form">
+            <input 
+              type="email" 
+              placeholder="Enter your email" 
+              className="cta-input" 
+            />
+            <button className="btn btn-primary">Subscribe</button>
+          </div>
+        </div>
+      </div>
 
-        .btn-outline:hover {
-          background: #667eea;
-          color: white;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 4rem 2rem;
+      <style jsx>{`
+        .highlights-section {
           background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(10px);
           border-radius: 20px;
-          margin: 2rem 0;
+          padding: 3rem 2rem;
           border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
-        .empty-icon {
-          font-size: 4rem;
-          margin-bottom: 1.5rem;
+        .highlights-content {
+          max-width: 1000px;
+          margin: 0 auto;
+          text-align: center;
         }
 
-        .empty-title {
-          font-size: 1.8rem;
+        .highlights-title {
+          font-size: 2.2rem;
           font-weight: 700;
           color: #333;
           margin-bottom: 1rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
-        .empty-description {
-          color: #666;
-          margin-bottom: 2rem;
+        .highlights-subtitle {
           font-size: 1.1rem;
+          color: #666;
+          margin-bottom: 3rem;
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+          line-height: 1.6;
         }
 
-        .empty-actions {
-          display: flex;
-          gap: 1rem;
-          justify-content: center;
-        }
-
-        .stats-section {
+        .highlights-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1.5rem;
-          margin: 4rem 0;
+          gap: 2rem;
+          margin-bottom: 3rem;
         }
 
-        .stat-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          padding: 2rem;
+        .highlight-card {
+          background: rgba(255, 255, 255, 0.8);
+          padding: 2rem 1rem;
           border-radius: 16px;
-          text-align: center;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          transition: transform 0.2s ease;
+          border: 1px solid rgba(102, 126, 234, 0.1);
+          transition: all 0.3s ease;
+          animation: fadeInUp 0.6s ease-out;
+          animation-fill-mode: both;
         }
 
-        .stat-card:hover {
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .highlight-card:hover {
           transform: translateY(-5px);
+          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
         }
 
-        .stat-icon {
-          font-size: 2.5rem;
+        .highlight-icon {
+          font-size: 3rem;
           margin-bottom: 1rem;
         }
 
-        .stat-number {
+        .highlight-number {
           font-size: 2rem;
           font-weight: 700;
           color: #333;
           margin-bottom: 0.5rem;
         }
 
-        .stat-label {
+        .highlight-label {
           color: #666;
           font-weight: 500;
         }
 
-        .cta-section {
-          margin-top: 4rem;
-        }
-
-        .cta-card {
+        .highlights-cta {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 20px;
-          padding: 3rem;
-          display: flex;
-          align-items: center;
-          gap: 2rem;
+          border-radius: 16px;
+          padding: 2.5rem;
           color: white;
+          margin-top: 2rem;
         }
 
-        .cta-content {
-          flex: 1;
+        .highlights-cta h3 {
+          font-size: 1.5rem;
+          margin-bottom: 0.5rem;
         }
 
-        .cta-content h3 {
-          font-size: 2rem;
-          margin-bottom: 1rem;
-        }
-
-        .cta-content p {
-          font-size: 1.1rem;
-          margin-bottom: 2rem;
+        .highlights-cta p {
           opacity: 0.9;
+          margin-bottom: 1.5rem;
         }
 
         .cta-form {
           display: flex;
           gap: 1rem;
           max-width: 400px;
+          margin: 0 auto;
         }
 
         .cta-input {
           flex: 1;
-          padding: 1rem;
+          padding: 0.8rem 1rem;
           border: none;
-          border-radius: 12px;
+          border-radius: 8px;
           font-size: 1rem;
           outline: none;
         }
 
-        .cta-image {
-          flex: 0 0 150px;
-        }
-
-        .cta-graphic {
-          font-size: 6rem;
-          text-align: center;
-        }
-
         @media (max-width: 768px) {
-          .hero-title {
-            font-size: 2.5rem;
+          .highlights-section {
+            padding: 2rem 1.5rem;
           }
 
-          .events-grid {
-            grid-template-columns: 1fr;
+          .highlights-title {
+            font-size: 1.8rem;
           }
 
-          .card-actions {
-            flex-direction: column;
-          }
-
-          .cta-card {
-            flex-direction: column;
-            text-align: center;
+          .highlights-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
           }
 
           .cta-form {
             flex-direction: column;
           }
 
-          .empty-actions {
-            flex-direction: column;
-            align-items: center;
-          }
-
-          .btn {
-            min-width: 200px;
+          .highlight-card {
+            padding: 1.5rem 1rem;
           }
         }
 
         @media (max-width: 480px) {
-          .hero-title {
-            font-size: 2rem;
-          }
-
-          .card-content {
-            padding: 1rem;
-          }
-
-          .cta-card {
-            padding: 2rem 1.5rem;
-          }
-
-          .stats-section {
+          .highlights-grid {
             grid-template-columns: 1fr;
+          }
+
+          .highlights-cta {
+            padding: 2rem 1.5rem;
           }
         }
       `}</style>
-    </div>
+    </section>
   );
 }

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
-import "./ClubCreate.css"; // We'll create this CSS file
+import "./ClubCreate.css";
 
 export default function ClubCreate() {
   const [form, setForm] = useState({
@@ -14,42 +14,85 @@ export default function ClubCreate() {
     purpose: "",
     type: "",
     
-    // Leader details - only USN required, others will be auto-filled or default
+    // Leader details
     leader_USN_id: "",
     
-    // Sub-leader details - only USN required, others will be auto-filled or default
+    // Sub-leader details
     subleader_USN_id: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [leaderDetails, setLeaderDetails] = useState(null);
+  const [subleaderDetails, setSubleaderDetails] = useState(null);
+  const [validatingUSN, setValidatingUSN] = useState({ leader: false, subleader: false });
   const navigate = useNavigate();
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // Function to auto-fill user details based on USN (you can integrate with your backend)
-  async function fetchUserDetails(usn, fieldPrefix) {
+  // Function to validate and fetch user details based on USN
+  async function validateUSN(usn, fieldType) {
+    if (!usn || usn.length < 3) {
+      if (fieldType === 'leader') setLeaderDetails(null);
+      if (fieldType === 'subleader') setSubleaderDetails(null);
+      return;
+    }
+
+    setValidatingUSN(prev => ({ ...prev, [fieldType]: true }));
+
     try {
-      // This would typically call your backend API to get user details
-      const response = await API.get(`/users/${usn}`);
-      const userData = response.data;
+      // Call backend API to validate USN and get student details
+      const response = await API.get(`/students/${usn}`);
+      const studentData = response.data;
       
-      // Auto-fill the details (though we won't display them in the form)
-      console.log(`Auto-filled details for ${fieldPrefix}:`, userData);
-      
+      if (fieldType === 'leader') {
+        setLeaderDetails(studentData);
+      } else {
+        setSubleaderDetails(studentData);
+      }
     } catch (error) {
-      console.log(`Could not auto-fill details for USN: ${usn}`);
-      // Continue with default values
+      console.log(`Could not find student with USN: ${usn}`);
+      if (fieldType === 'leader') {
+        setLeaderDetails(null);
+      } else {
+        setSubleaderDetails(null);
+      }
+    } finally {
+      setValidatingUSN(prev => ({ ...prev, [fieldType]: false }));
     }
   }
+
+  // Handle USN input with debouncing
+  const handleUSNChange = (e, fieldType) => {
+    const usn = e.target.value;
+    setForm({ ...form, [e.target.name]: usn });
+    
+    // Debounce the validation call
+    setTimeout(() => {
+      validateUSN(usn, fieldType);
+    }, 500);
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     
+    // Basic validation
+    if (!leaderDetails) {
+      alert("❌ Please enter a valid Leader USN");
+      setLoading(false);
+      return;
+    }
+    
+    if (!subleaderDetails) {
+      alert("❌ Please enter a valid Sub Leader USN");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Prepare data for submission
+      // Prepare data for submission - matches backend expectations
       const submissionData = {
         // Club details
         club_name: form.club_name,
@@ -59,10 +102,10 @@ export default function ClubCreate() {
         purpose: form.purpose || "To promote student activities and interests",
         type: form.type || "General",
         
-        // Leader details - backend will handle fetching complete details
+        // Leader details
         leader_USN_id: form.leader_USN_id,
         
-        // Sub-leader details - backend will handle fetching complete details
+        // Sub-leader details
         subleader_USN_id: form.subleader_USN_id,
       };
 
@@ -70,7 +113,11 @@ export default function ClubCreate() {
       alert("✅ Club creation request submitted! Wait for admin approval.");
       navigate("/");
     } catch (err) {
-      alert("❌ Failed to create club. Please check details.");
+      if (err.response?.data?.detail) {
+        alert(`❌ ${err.response.data.detail}`);
+      } else {
+        alert("❌ Failed to create club. Please check details.");
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -138,21 +185,18 @@ export default function ClubCreate() {
 
               <div className="form-group">
                 <label htmlFor="type">Club Type</label>
-                <select
+                <input
+                  type="text"
                   id="type"
                   name="type"
                   value={form.type}
                   onChange={handleChange}
                   className="form-input"
-                >
-                  <option value="">Select club type</option>
-                  <option value="Technical">Technical</option>
-                  <option value="Cultural">Cultural</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Social">Social</option>
-                  <option value="Academic">Academic</option>
-                  <option value="Other">Other</option>
-                </select>
+                  placeholder="Enter club type (will be auto-classified)"
+                />
+                <small className="input-hint">
+                  You can enter a type or it will be automatically classified
+                </small>
               </div>
             </div>
 
@@ -161,12 +205,15 @@ export default function ClubCreate() {
               <textarea
                 id="description"
                 name="description"
-                placeholder="Describe your club's mission, activities, and goals..."
+                placeholder="Describe your club's mission, activities, and goals... (will be enhanced automatically)"
                 value={form.description}
                 onChange={handleChange}
                 rows="4"
                 className="form-textarea"
               />
+              <small className="input-hint">
+                Your description will be professionally enhanced using AI
+              </small>
             </div>
 
             <div className="form-group full-width">
@@ -174,12 +221,15 @@ export default function ClubCreate() {
               <textarea
                 id="purpose"
                 name="purpose"
-                placeholder="What is the main purpose of your club?"
+                placeholder="What is the main purpose of your club? (will be enhanced automatically)"
                 value={form.purpose}
                 onChange={handleChange}
                 rows="3"
                 className="form-textarea"
               />
+              <small className="input-hint">
+                Your purpose will be professionally enhanced using AI
+              </small>
             </div>
           </div>
 
@@ -202,13 +252,24 @@ export default function ClubCreate() {
                     type="text"
                     placeholder="Enter USN (e.g., 1RV20CS001)"
                     value={form.leader_USN_id}
-                    onChange={handleChange}
+                    onChange={(e) => handleUSNChange(e, 'leader')}
                     required
                     className="form-input"
                   />
-                  <small className="input-hint">
-                    Other details will be automatically fetched from student records
-                  </small>
+                  <div className="usn-validation-status">
+                    {validatingUSN.leader && (
+                      <small className="validating">🔄 Validating USN...</small>
+                    )}
+                    {leaderDetails && !validatingUSN.leader && (
+                      <div className="student-details">
+                        <small className="valid">✅ Validated: {leaderDetails.name}</small>
+                        <small>Email: {leaderDetails.email}</small>
+                      </div>
+                    )}
+                    {!leaderDetails && form.leader_USN_id && !validatingUSN.leader && (
+                      <small className="invalid">❌ USN not found in student records</small>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -223,13 +284,24 @@ export default function ClubCreate() {
                     type="text"
                     placeholder="Enter USN (e.g., 1RV20CS002)"
                     value={form.subleader_USN_id}
-                    onChange={handleChange}
+                    onChange={(e) => handleUSNChange(e, 'subleader')}
                     required
                     className="form-input"
                   />
-                  <small className="input-hint">
-                    Other details will be automatically fetched from student records
-                  </small>
+                  <div className="usn-validation-status">
+                    {validatingUSN.subleader && (
+                      <small className="validating">🔄 Validating USN...</small>
+                    )}
+                    {subleaderDetails && !validatingUSN.subleader && (
+                      <div className="student-details">
+                        <small className="valid">✅ Validated: {subleaderDetails.name}</small>
+                        <small>Email: {subleaderDetails.email}</small>
+                      </div>
+                    )}
+                    {!subleaderDetails && form.subleader_USN_id && !validatingUSN.subleader && (
+                      <small className="invalid">❌ USN not found in student records</small>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -246,7 +318,7 @@ export default function ClubCreate() {
             </button>
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || !leaderDetails || !subleaderDetails}
               className="btn-primary"
             >
               {loading ? "Submitting..." : "Create Club Request"}
