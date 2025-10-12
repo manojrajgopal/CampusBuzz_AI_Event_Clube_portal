@@ -5,6 +5,7 @@ from bson import ObjectId
 from datetime import datetime
 from passlib.context import CryptContext
 from bson.errors import InvalidId
+import json
 from models.club_model import (
     ClubIn,
     ClubOut,
@@ -18,6 +19,10 @@ from config.db import db
 from utils.mongo_utils import sanitize_doc
 from utils.id_util import normalize_id
 from pymongo.errors import PyMongoError
+import os
+import httpx
+from dotenv import load_dotenv
+from fastapi.encoders import jsonable_encoder
 
 router = APIRouter(prefix="/api/clubs", tags=["clubs"])
 
@@ -29,6 +34,9 @@ COLLECTION_TEACHERS = "teachers"
 USERS_COLLECTION = "users"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # ----------------- Helpers -----------------
 def validate_object_id(id_str: str) -> ObjectId:
@@ -119,6 +127,92 @@ async def leave_club(club_id: str, user_id: str):
     updated_club = await db[COLLECTION].find_one({"_id": oid})
     return serialize_club(updated_club)
 
+# Gemini API helper - FIXED VERSION
+async def enhance_with_gemini(description: str, purpose: str):
+    """
+    Enhance club description and purpose using Gemini and classify club type.
+    Returns enhanced data without storing anything in database.
+    """
+    if not description or not purpose:
+        return {
+            "enhanced_description": description,
+            "enhanced_purpose": purpose,
+            "type": "General"
+        }
+    
+    if not GEMINI_API_KEY:
+        # If no API key, return original data
+        return {
+            "enhanced_description": description,
+            "enhanced_purpose": purpose,
+            "type": "General"
+        }
+
+    # --- Gemini enhancement ---
+    prompt = f"""
+    Enhance the following club details professionally and classify the club type.
+
+    Description: {description}
+    Purpose: {purpose}
+
+    Return a valid JSON only with these keys:
+    - enhanced_description (make it professional and engaging, 2-3 sentences)
+    - enhanced_purpose (make it clear and impactful, 2-3 sentences)  
+    - type (one or two words max, e.g. 'Technical', 'Sports', 'Cultural', 'Literature', 'Entrepreneurship', 'Music', etc.)
+
+    Make the enhancement professional and suitable for a university club.
+    """
+
+    model = "gemini-2.5-flash-lite"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    headers = {"Content-Type": "application/json"}
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{url}?key={GEMINI_API_KEY}", 
+                headers=headers, 
+                json=payload,
+                timeout=30.0
+            )
+
+        if response.status_code != 200:
+            print(f"Gemini API error: {response.status_code} - {response.text}")
+            return {
+                "enhanced_description": description,
+                "enhanced_purpose": purpose,
+                "type": "General"
+            }
+
+        data = response.json()
+        text_response = data["candidates"][0]["content"]["parts"][0]["text"]
+        
+        # Clean the response - remove markdown code blocks if present
+        text_response = text_response.strip()
+        if text_response.startswith("```json"):
+            text_response = text_response[7:]
+        if text_response.endswith("```"):
+            text_response = text_response[:-3]
+        text_response = text_response.strip()
+        
+        enhanced = json.loads(text_response)
+        
+        # Validate the enhanced data has required fields
+        if not all(key in enhanced for key in ["enhanced_description", "enhanced_purpose", "type"]):
+            raise ValueError("Missing required fields in Gemini response")
+            
+        return enhanced
+        
+    except Exception as e:
+        print(f"Error enhancing with Gemini: {str(e)}")
+        # Return original data if Gemini fails
+        return {
+            "enhanced_description": description,
+            "enhanced_purpose": purpose,
+            "type": "General"
+        }
+    
 # ----------------- Applications -----------------
 async def apply_join_club(application: JoinClubApplication, user_id: str):
     app_data = application.dict()
@@ -128,15 +222,55 @@ async def apply_join_club(application: JoinClubApplication, user_id: str):
     app["id"] = str(app["_id"])
     return app
 
-async def apply_create_club(application: CreateClubApplication, user_id: str):
+async def apply_create_club(application, user_id: str):
+    """
+    Enhanced version of apply_create_club:
+    - Uses Gemini for enhancement.
+    - Fetches leader/subleader details.
+    - Validates leader/subleader existence.
+    """
+
     app_data = application.dict()
     app_data["user_id"] = normalize_id(user_id)
-    result = await db[COLLECTION_CREATE].insert_one(app_data)
-    inserted_app = await db[COLLECTION_CREATE].find_one({"_id": result.inserted_id})
+
+    # ✅ 1. Validate leader & subleader existence
+    leader = await db["student_profiles"].find_one({"USN_id": app_data.get("leader_USN_id")})
+    subleader = await db["student_profiles"].find_one({"USN_id": app_data.get("subleader_USN_id")})
+
+    if not leader:
+        raise HTTPException(status_code=404, detail=f"Leader with USN {app_data.get('leader_USN_id')} not found")
+    if not subleader:
+        raise HTTPException(status_code=404, detail=f"Subleader with USN {app_data.get('subleader_USN_id')} not found")
+
+    # ✅ 2. Enhance with Gemini
+    enhancement = await enhance_with_gemini(
+        description=app_data.get("description", ""),
+        purpose=app_data.get("purpose", "")
+    )
+
+    # ✅ 3. Merge enhanced data and leader/subleader info
+    app_data.update({
+        "description": enhancement.get("enhanced_description", app_data.get("description")),
+        "purpose": enhancement.get("enhanced_purpose", app_data.get("purpose")),
+        "type": enhancement.get("type", "General"),
+        "leader_data": leader,
+        "subleader_data": subleader,
+        "applied_at": datetime.utcnow(),
+        "status": "pending"
+    })
+
+    # ✅ 4. Insert into collection
+    result = await db["club_create_applications"].insert_one(app_data)
+    inserted_app = await db["club_create_applications"].find_one({"_id": result.inserted_id})
+
+    # ✅ 5. Format final response
     inserted_app["id"] = str(inserted_app["_id"])
     inserted_app["user_id"] = str(inserted_app["user_id"])
-    del inserted_app["_id"]
-    return inserted_app
+    
+    # Convert ObjectId fields to strings for JSON serialization
+    response_data = jsonable_encoder(inserted_app, custom_encoder={ObjectId: str})
+    
+    return response_data
 
 async def list_pending_club_applications():
     apps = []
@@ -204,26 +338,36 @@ async def approve_club_application(application_id: str, admin_id: str):
     # Create the club in clubs collection
     club_doc = {
         "name": app.get("club_name"),
+        "description": app.get("description", ""),
+        "purpose": app.get("purpose", ""),
+        "type": app.get("type", "General"),
         "email": app.get("club_email"),
-        "password": app.get("club_password"),
         "leader_id": normalize_id(app["user_id"]),
+        "leader_data": app.get("leader_data", {}),
         "subleader": {
-            "name": app.get("subleader_name", ""),
-            "email": app.get("subleader_email", "")
+            "name": app.get("subleader_data", {}).get("name", ""),
+            "email": app.get("subleader_data", {}).get("email", ""),
+            "USN_id": app.get("subleader_USN_id", "")
         },
         "created_at": datetime.utcnow(),
         "approved": True,
         "members": [normalize_id(app["user_id"])],
         "created_by": normalize_id(admin_id),
+        "requests": []
     }
 
     # Insert into clubs collection
-    await db[COLLECTION].insert_one(club_doc)
+    result_club = await db[COLLECTION].insert_one(club_doc)
+    club_id = result_club.inserted_id
 
     # Remove the original application
     await db[COLLECTION_CREATE].delete_one({"_id": normalize_id(application_id)})
 
-    return {"message": "✅ Club approved successfully", "club_user_id": str(club_user_id)}
+    return {
+        "message": "✅ Club approved successfully", 
+        "club_user_id": str(club_user_id),
+        "club_id": str(club_id)
+    }
 
 async def reject_club_application(app_id: str):
     oid = normalize_id(app_id)
@@ -386,7 +530,6 @@ async def get_club(club_id: str):
         print("To here")
         return club
 
-
     except Exception as e:
         print("Error in get_club:", str(e))
         raise HTTPException(status_code=400, detail="Invalid club ID")
@@ -480,28 +623,38 @@ async def approve_application(app_id: str, user=Depends(require_role(["admin"]))
         # Create the club
         club_doc = {
             "name": app.get("club_name"),
+            "description": app.get("description", ""),
+            "purpose": app.get("purpose", ""),
+            "type": app.get("type", "General"),
             "email": app.get("club_email"),
-            "password": app.get("club_password"),
             "leader_id": ObjectId(app["user_id"]),
+            "leader_data": app.get("leader_data", {}),
             "subleader": {
-                "name": app.get("subleader_name", ""),
-                "email": app.get("subleader_email", "")
+                "name": app.get("subleader_data", {}).get("name", ""),
+                "email": app.get("subleader_data", {}).get("email", ""),
+                "USN_id": app.get("subleader_USN_id", "")
             },
             "created_at": datetime.utcnow(),
             "approved": True,
             "members": [ObjectId(app["user_id"])],
             "created_by": ObjectId(user["_id"]),
+            "requests": []
         }
         print(f"DEBUG: Prepared club document: {club_doc}")
 
-        await db[COLLECTION].insert_one(club_doc)
-        print("DEBUG: Inserted club into DB")
+        result_club = await db[COLLECTION].insert_one(club_doc)
+        club_id = result_club.inserted_id
+        print(f"DEBUG: Inserted club into DB with id={club_id}")
 
         # Remove original application
         await db[COLLECTION_CREATE].delete_one({"_id": app_oid})
         print(f"DEBUG: Deleted original application with id={app_oid}")
 
-        return {"message": "✅ Club approved successfully", "club_user_id": str(club_user_id)}
+        return {
+            "message": "✅ Club approved successfully", 
+            "club_user_id": str(club_user_id),
+            "club_id": str(club_id)
+        }
 
     except Exception as e:
         print("Error approving application:", e)
