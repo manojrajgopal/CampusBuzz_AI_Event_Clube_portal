@@ -509,41 +509,80 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Join Club Section */}
-      <section className="section clubs-section">
-        <div className="section-header">
-          <h2>Join a Club</h2>
-          <div className="underline"></div>
-        </div>
-        <div className="club-join">
-          <div className="club-selector">
-            <select
-              value={selectedClub}
-              onChange={(e) => setSelectedClub(e.target.value)}
-              className="club-dropdown"
-            >
-              <option value="">-- Select a Club --</option>
-              {safeClubs.length > 0 ? (
-                safeClubs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No clubs available</option>
-              )}
-            </select>
-            <button
-              className="btn-primary"
-              disabled={!selectedClub}
-              onClick={() => applyJoinClub(selectedClub)}
-            >
-              Apply to Join
-            </button>
+        {/* Join Club Section */}
+        <section className="section clubs-section">
+          <div className="section-header">
+            <h2>Join a Club</h2>
+            <div className="underline"></div>
           </div>
-          <p className="club-help-text">Select a club from the list and apply to become a member</p>
-        </div>
-      </section>
+          
+          <div className="clubs-grid">
+            {safeClubs.length > 0 ? (
+              safeClubs.map((club) => (
+                <div key={club.id} className="club-poster-card">
+                  {/* Club Image */}
+                  <div className="club-image-container">
+                    {club.image ? (
+                      <img 
+                        src={club.image} 
+                        alt={club.name} 
+                        className="club-image"
+                      />
+                    ) : (
+                      <div className="club-image-placeholder">
+                        <span>No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Club Details */}
+                  <div className="club-details">
+                    <h3 className="club-name">{club.name}</h3>
+                    
+                    {club.email && (
+                      <div className="club-email">
+                        console.log(club.email);
+                        <span className="email-label">Email: </span>
+                        <a href={`mailto:${club.email}`} className="email-link">
+                          {club.email}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {club.description && (
+                      <div className="club-description">
+                        console.log(club.description);
+                        <p>{club.description}</p>
+                      </div>
+                    )}
+                    
+                    {club.purpose && (
+                      <div className="club-purpose">
+                        console.log(club.purpose);
+                        <h4>Purpose</h4>
+                        <p>{club.purpose}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Join Button */}
+                  <div className="club-actions">
+                    <button
+                      className="btn-primary join-btn"
+                      onClick={() => applyJoinClub(club.id)}
+                    >
+                      Join Club
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-clubs-message">
+                <p>No clubs available to join at the moment.</p>
+              </div>
+            )}
+          </div>
+        </section>
 
       {/* Reviews Section */}
       <section className="section reviews-section">

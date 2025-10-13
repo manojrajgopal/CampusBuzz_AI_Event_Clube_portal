@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
@@ -11,8 +12,10 @@ export default function Navbar() {
   const [formData, setFormData] = useState({});
   const [showLoginDropdown, setShowLoginDropdown] = useState(false);
   const [showStudentLogin, setShowStudentLogin] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const popupRef = useRef(null);
   const loginDropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -25,6 +28,10 @@ export default function Navbar() {
           const res = await API.get("/student/profile");
           setProfile(res.data);
           setFormData(res.data);
+          // Set profile photo if exists
+          if (res.data.photo) {
+            setProfilePhoto(res.data.photo);
+          }
         } catch (err) {
           console.error(err);
         }
@@ -56,9 +63,26 @@ export default function Navbar() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProfilePhoto(event.target.result);
+        // You can also upload the photo to your backend here
+        // handlePhotoUploadToServer(file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
     try {
-      const res = await API.post("/student/profile", formData);
+      const dataToSave = {
+        ...formData,
+        photo: profilePhoto // Include photo in saved data
+      };
+      const res = await API.post("/student/profile", dataToSave);
       setProfile(res.data);
       setIsEditing(false);
     } catch (err) {
@@ -291,33 +315,35 @@ export default function Navbar() {
 
         {/* Auth Section - Right Side */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* Create Club button - visible always */}
-          <Link to="/club/create">
-            <button
-              style={{
-                background: "linear-gradient(45deg, #ff9a9e, #fad0c4)",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "20px",
-                color: "#333",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                fontSize: "14px"
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = "translateY(-2px)";
-                e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = "translateY(0)";
-                e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-              }}
-            >
-              Create Club
-            </button>
-          </Link>
+          {/* Create Club button - hidden for club role */}
+          {role !== "club" && (
+            <Link to="/club/create">
+              <button
+                style={{
+                  background: "linear-gradient(45deg, #ff9a9e, #fad0c4)",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "20px",
+                  color: "#333",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                  fontSize: "14px"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                }}
+              >
+                Create Club
+              </button>
+            </Link>
+          )}
 
           {/* Login/Profile Section */}
           {role === "admin" && token ? (
@@ -325,7 +351,7 @@ export default function Navbar() {
               <Link to="/admin">
                 <button
                   style={{
-                    background: "linear-gradient(45deg, #667eea, #764ba2)",
+                    background: "linear-gradient(45deg, #ff6b6b, #feca57)",
                     border: "none",
                     padding: "10px 20px",
                     borderRadius: "20px",
@@ -438,7 +464,7 @@ export default function Navbar() {
                     border: "none",
                     borderRadius: "16px",
                     padding: "24px",
-                    width: "380px",
+                    width: "420px",
                     boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                     zIndex: 1000,
                     animation: "slideDown 0.3s ease"
@@ -450,36 +476,171 @@ export default function Navbar() {
                     borderBottom: "2px solid #4ecdc4", 
                     paddingBottom: "12px",
                     fontSize: "18px",
-                    fontWeight: "700"
+                    fontWeight: "700",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px"
                   }}>
+                    <span style={{
+                      width: "32px",
+                      height: "32px",
+                      background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: "14px",
+                      fontWeight: "600"
+                    }}>👤</span>
                     Student Profile
                   </h3>
+                  
                   {profile && !isEditing ? (
                     <div style={{ lineHeight: "1.6", fontSize: "14px", color: "#555" }}>
-                      <p><b>USN ID:</b> {profile.USN_id}</p>
-                      <p><b>Name:</b> {profile.name}</p>
-                      <p><b>Email:</b> {profile.email}</p>
-                      <p><b>Mobile:</b> {profile.mobile}</p>
-                      <p><b>Department:</b> {profile.department}</p>
-                      <p><b>Year:</b> {profile.year}</p>
-                      <p><b>Skills:</b> {profile.skills?.join(", ")}</p>
-                      <p><b>Interests:</b> {profile.interests?.join(", ")}</p>
-                      <p><b>Achievements:</b> {profile.achievements?.join(", ")}</p>
-                      <p><b>Description:</b> {profile.description}</p>
+                      {/* Profile Photo and Basic Info Section */}
+                      <div style={{ 
+                        display: "flex", 
+                        gap: "20px", 
+                        alignItems: "flex-start",
+                        marginBottom: "20px",
+                        paddingBottom: "20px",
+                        borderBottom: "1px solid #f0f0f0"
+                      }}>
+                        <div style={{
+                          width: "80px",
+                          height: "80px",
+                          borderRadius: "50%",
+                          background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(45deg, #667eea, #764ba2)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                          fontWeight: "600",
+                          fontSize: "24px",
+                          boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                          border: "3px solid #4ecdc4"
+                        }}>
+                          {!profilePhoto && (profile.name ? profile.name.charAt(0).toUpperCase() : "S")}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ 
+                            margin: "0 0 8px 0", 
+                            color: "#333", 
+                            fontSize: "18px",
+                            fontWeight: "700"
+                          }}>
+                            {profile.name}
+                          </h4>
+                          <p style={{ 
+                            margin: "0 0 6px 0", 
+                            color: "#666",
+                            fontSize: "14px"
+                          }}>
+                            <b>USN:</b> {profile.USN_id}
+                          </p>
+                          <p style={{ 
+                            margin: "0 0 6px 0", 
+                            color: "#666",
+                            fontSize: "14px"
+                          }}>
+                            <b>Year:</b> {profile.year} • <b>Dept:</b> {profile.department}
+                          </p>
+                          <p style={{ 
+                            margin: "0", 
+                            color: "#4ecdc4",
+                            fontSize: "13px",
+                            fontWeight: "600"
+                          }}>
+                            {profile.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Detailed Information Section */}
+                      <div style={{ 
+                        display: "grid", 
+                        gridTemplateColumns: "1fr 1fr", 
+                        gap: "15px",
+                        marginBottom: "20px"
+                      }}>
+                        <div>
+                          <p style={{ margin: "0 0 8px 0" }}>
+                            <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Mobile</b>
+                            <span style={{ color: "#666" }}>{profile.mobile}</span>
+                          </p>
+                        </div>
+                        <div>
+                          <p style={{ margin: "0 0 8px 0" }}>
+                            <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Interests</b>
+                            <span style={{ color: "#666" }}>{profile.interests?.join(", ") || "None"}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Skills Section */}
+                      <div style={{ marginBottom: "15px" }}>
+                        <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Skills</b>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                          {profile.skills?.map((skill, index) => (
+                            <span key={index} style={{
+                              background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
+                              color: "white",
+                              padding: "4px 12px",
+                              borderRadius: "12px",
+                              fontSize: "12px",
+                              fontWeight: "500"
+                            }}>
+                              {skill}
+                            </span>
+                          )) || <span style={{ color: "#999", fontSize: "13px" }}>No skills added</span>}
+                        </div>
+                      </div>
+
+                      {/* Achievements Section */}
+                      <div style={{ marginBottom: "20px" }}>
+                        <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Achievements</b>
+                        <div style={{ color: "#666", fontSize: "13px", lineHeight: "1.5" }}>
+                          {profile.achievements?.join(", ") || "No achievements added"}
+                        </div>
+                      </div>
+
+                      {/* Description Section */}
+                      {profile.description && (
+                        <div style={{ 
+                          background: "#f8f9fa",
+                          padding: "12px",
+                          borderRadius: "10px",
+                          marginBottom: "20px"
+                        }}>
+                          <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>About</b>
+                          <p style={{ 
+                            margin: "0", 
+                            color: "#666", 
+                            fontSize: "13px",
+                            lineHeight: "1.5",
+                            fontStyle: "italic"
+                          }}>
+                            {profile.description}
+                          </p>
+                        </div>
+                      )}
+
                       <button 
                         onClick={() => setIsEditing(true)}
                         style={{
                           background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
                           border: "none",
-                          padding: "10px 20px",
+                          padding: "12px 24px",
                           borderRadius: "20px",
                           color: "white",
                           fontWeight: "600",
                           cursor: "pointer",
-                          marginTop: "15px",
+                          marginTop: "10px",
                           transition: "all 0.3s ease",
                           width: "100%",
-                          fontSize: "14px"
+                          fontSize: "14px",
+                          boxShadow: "0 2px 10px rgba(78, 205, 196, 0.3)"
                         }}
                         onMouseEnter={(e) => {
                           e.target.style.transform = "translateY(-2px)";
@@ -487,7 +648,7 @@ export default function Navbar() {
                         }}
                         onMouseLeave={(e) => {
                           e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "none";
+                          e.target.style.boxShadow = "0 2px 10px rgba(78, 205, 196, 0.3)";
                         }}
                       >
                         Edit Profile
@@ -495,18 +656,103 @@ export default function Navbar() {
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="year" placeholder="Year" value={formData.year || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                      {/* Photo Upload Section */}
+                      <div style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "15px",
+                        marginBottom: "10px"
+                      }}>
+                        <div 
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{
+                            width: "80px",
+                            height: "80px",
+                            borderRadius: "50%",
+                            background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(45deg, #667eea, #764ba2)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "24px",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                            border: "3px solid #4ecdc4",
+                            transition: "all 0.3s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = "scale(1.05)";
+                            e.target.style.boxShadow = "0 6px 20px rgba(0,0,0,0.15)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = "scale(1)";
+                            e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
+                          }}
+                        >
+                          {!profilePhoto && (formData.name ? formData.name.charAt(0).toUpperCase() : "S")}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ 
+                            margin: "0 0 8px 0", 
+                            color: "#333",
+                            fontWeight: "600",
+                            fontSize: "14px"
+                          }}>
+                            Profile Photo
+                          </p>
+                          <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                              background: "rgba(102, 126, 234, 0.1)",
+                              border: "1px dashed #667eea",
+                              padding: "8px 16px",
+                              borderRadius: "10px",
+                              color: "#667eea",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              transition: "all 0.3s ease"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = "rgba(102, 126, 234, 0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = "rgba(102, 126, 234, 0.1)";
+                            }}
+                          >
+                            Upload Photo
+                          </button>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handlePhotoUpload}
+                            accept="image/*"
+                            style={{ display: "none" }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Form Fields */}
+                      <div style={{ 
+                        display: "grid", 
+                        gridTemplateColumns: "1fr 1fr", 
+                        gap: "12px"
+                      }}>
+                        <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                        <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                        <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                        <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                        <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                        <input name="year" placeholder="Year" value={formData.year || ""} onChange={handleChange} 
+                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                      </div>
+                      
                       <input name="skills" placeholder="Skills (comma separated)" value={formData.skills?.join(", ") || ""} onChange={handleChange} 
                         style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
                       <input name="interests" placeholder="Interests (comma separated)" value={formData.interests?.join(", ") || ""} onChange={handleChange} 
@@ -522,14 +768,15 @@ export default function Navbar() {
                           style={{
                             background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
                             border: "none",
-                            padding: "10px 20px",
+                            padding: "12px 24px",
                             borderRadius: "20px",
                             color: "white",
                             fontWeight: "600",
                             cursor: "pointer",
                             flex: 1,
                             transition: "all 0.3s ease",
-                            fontSize: "14px"
+                            fontSize: "14px",
+                            boxShadow: "0 2px 10px rgba(78, 205, 196, 0.3)"
                           }}
                           onMouseEnter={(e) => {
                             e.target.style.transform = "translateY(-2px)";
@@ -537,7 +784,7 @@ export default function Navbar() {
                           }}
                           onMouseLeave={(e) => {
                             e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "none";
+                            e.target.style.boxShadow = "0 2px 10px rgba(78, 205, 196, 0.3)";
                           }}
                         >
                           Save Changes
@@ -547,7 +794,7 @@ export default function Navbar() {
                           style={{
                             background: "rgba(255,255,255,0.1)",
                             border: "1px solid #e0e0e0",
-                            padding: "10px 20px",
+                            padding: "12px 24px",
                             borderRadius: "20px",
                             color: "#666",
                             fontWeight: "600",
@@ -631,35 +878,27 @@ export default function Navbar() {
               <button 
                 onClick={() => setShowLoginDropdown(!showLoginDropdown)}
                 style={{
-                  background: "linear-gradient(45deg, #a8edea, #fed6e3)",
+                  background: "linear-gradient(45deg, #ff6b6b, #feca57)",
                   border: "none",
-                  padding: "10px 20px",
+                  padding: "10px 24px",
                   borderRadius: "20px",
-                  color: "#333",
+                  color: "white",
                   fontWeight: "600",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
                   boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
                   fontSize: "14px"
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.transform = "translateY(-2px)";
-                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
+                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.transform = "translateY(0)";
                   e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
                 }}
               >
-                Login 
-                <span style={{ 
-                  transform: showLoginDropdown ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.3s ease",
-                  fontSize: "10px"
-                }}>▼</span>
+                Login
               </button>
 
               {showLoginDropdown && (
@@ -669,94 +908,103 @@ export default function Navbar() {
                     top: "50px",
                     right: "0",
                     background: "white",
+                    border: "none",
                     borderRadius: "16px",
                     padding: "16px",
+                    width: "200px",
                     boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                     zIndex: 1000,
-                    animation: "slideDown 0.3s ease",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                    minWidth: "200px",
-                    border: "1px solid rgba(0,0,0,0.05)"
+                    animation: "slideDown 0.3s ease"
                   }}
                 >
-                  <button 
-                    onClick={() => {
-                      setShowStudentLogin(true);
-                      setShowLoginDropdown(false);
-                    }}
-                    style={{ 
-                      background: 'none',
-                      border: 'none',
-                      textDecoration: 'none', 
-                      color: '#333',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      transition: 'all 0.2s ease',
-                      fontWeight: '600',
-                      width: '100%',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = "rgba(102, 126, 234, 0.08)";
-                      e.target.style.transform = "translateX(5px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = "transparent";
-                      e.target.style.transform = "translateX(0)";
-                    }}
-                  >
-                    Student Login/Signup
-                  </button>
-                  <Link 
-                    to="/club/login" 
-                    style={{ 
-                      textDecoration: 'none', 
-                      color: '#333',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      transition: 'all 0.2s ease',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      display: 'block'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = "rgba(102, 126, 234, 0.08)";
-                      e.target.style.transform = "translateX(5px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = "transparent";
-                      e.target.style.transform = "translateX(0)";
-                    }}
-                  >
-                    Club Login
-                  </Link>
-                  <Link 
-                    to="/admin/login" 
-                    style={{ 
-                      textDecoration: 'none', 
-                      color: '#333',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      transition: 'all 0.2s ease',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      display: 'block'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = "rgba(102, 126, 234, 0.08)";
-                      e.target.style.transform = "translateX(5px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = "transparent";
-                      e.target.style.transform = "translateX(0)";
-                    }}
-                  >
-                    Admin Login
-                  </Link>
+                  <h4 style={{ 
+                    margin: "0 0 12px 0", 
+                    color: "#333", 
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    textAlign: "center"
+                  }}>
+                    Choose Login
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <Link to="/admin/login">
+                      <button
+                        style={{
+                          background: "linear-gradient(45deg, #667eea, #764ba2)",
+                          border: "none",
+                          padding: "12px 16px",
+                          borderRadius: "12px",
+                          color: "white",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          width: "100%",
+                          fontSize: "14px"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      >
+                        Admin Login
+                      </button>
+                    </Link>
+                    <Link to="/club/login">
+                      <button
+                        style={{
+                          background: "linear-gradient(45deg, #ff9a9e, #fad0c4)",
+                          border: "none",
+                          padding: "12px 16px",
+                          borderRadius: "12px",
+                          color: "#333",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          width: "100%",
+                          fontSize: "14px"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.boxShadow = "0 4px 15px rgba(255, 154, 158, 0.4)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      >
+                        Club Login
+                      </button>
+                    </Link>
+                    <button
+                      onClick={() => setShowStudentLogin(true)}
+                      style={{
+                        background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
+                        border: "none",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        color: "white",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        width: "100%",
+                        fontSize: "14px"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 4px 15px rgba(78, 205, 196, 0.4)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    >
+                      Student Login
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -764,7 +1012,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Student Login Modal - Centered on screen */}
+      {/* Student Login Modal */}
       {showStudentLogin && (
         <div style={{
           position: "fixed",
@@ -772,22 +1020,48 @@ export default function Navbar() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0, 0, 0, 0.5)",
+          background: "rgba(0,0,0,0.5)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           zIndex: 2000,
-          padding: "20px"
+          backdropFilter: "blur(5px)"
         }}>
           <div style={{
             background: "white",
             borderRadius: "20px",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
+            padding: "30px",
             maxWidth: "500px",
-            width: "100%",
+            width: "90%",
             maxHeight: "90vh",
-            overflow: "auto"
+            overflow: "auto",
+            boxShadow: "0 30px 60px rgba(0,0,0,0.3)",
+            position: "relative"
           }}>
+            <button 
+              onClick={() => setShowStudentLogin(false)}
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "none",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+                color: "#999",
+                transition: "all 0.3s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.color = "#333";
+                e.target.style.transform = "rotate(90deg)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.color = "#999";
+                e.target.style.transform = "rotate(0deg)";
+              }}
+            >
+              ×
+            </button>
             <StudentAuth onClose={() => setShowStudentLogin(false)} />
           </div>
         </div>
@@ -796,8 +1070,14 @@ export default function Navbar() {
       <style>
         {`
           @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
         `}
       </style>
