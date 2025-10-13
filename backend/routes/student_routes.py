@@ -31,7 +31,6 @@ async def create_or_update_profile(user_id: str, profile_in: StudentProfileIn):
         new_profile = await db[COLLECTION].find_one({"_id": result.inserted_id})
         return serialize_profile(new_profile)
 
-
 async def get_profile(user_id: str):
     profile = await db[COLLECTION].find_one({"user_id": ObjectId(user_id)})
     if not profile:

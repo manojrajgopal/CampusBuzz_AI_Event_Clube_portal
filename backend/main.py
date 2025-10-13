@@ -13,8 +13,7 @@ from routes import (auth_routes,
 
 from config.startup import register_startup_events  # Import startup tasks
 from routes.blog_routes import router as blog_router
-
-
+from routes.event_scraper_routes import router as event_scraper_router
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
@@ -38,7 +37,7 @@ app.include_router(student_routes.router)
 app.include_router(blog_router)
 app.include_router(admin_routes.router, prefix="/api")  # Admin routes under /api/admin
 app.include_router(chatbot_router.router)  # Chatbot routes
-
+app.include_router(event_scraper_router)
 
 # --- Root endpoint --
 @app.get("/")
