@@ -16,3 +16,4 @@ MAIN_CONTENT = {
 @router.get("/")
 async def get_main_page():
     return MAIN_CONTENT
+
