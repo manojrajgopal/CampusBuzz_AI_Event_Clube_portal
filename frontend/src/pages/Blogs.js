@@ -90,11 +90,11 @@ export default function Blogs() {
         formData.append("file", file);
 
         if (editingBlog) {
-          await API.put(`/api/blogs/upload/${editingBlog._id || editingBlog.id}`, formData, {
+          await API.put(`/blogs/upload/${editingBlog._id || editingBlog.id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         } else {
-          await API.post("/api/blogs/upload", formData, {
+          await API.post("/blogs", formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         }
@@ -107,9 +107,9 @@ export default function Blogs() {
         };
 
         if (editingBlog) {
-          await API.put(`/api/blogs/${editingBlog._id || editingBlog.id}`, data);
+          await API.put(`blogs/${editingBlog._id || editingBlog.id}`, data);
         } else {
-          await API.post("/api/blogs/", data);
+          await API.post("blogs/", data);
         }
       }
 

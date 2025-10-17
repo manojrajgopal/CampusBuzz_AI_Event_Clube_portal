@@ -12,7 +12,7 @@ COLLECTION = "blogs"
 
 # Create Blog
 @router.post("/", response_model=BlogOut)
-async def create_blog(blog: BlogIn, user=Depends(require_role(["admin", "club"]))):
+async def create_blog(blog: BlogIn):
     blog_dict = blog.dict()
     blog_dict["created_at"] = datetime.utcnow()
     result = await db[COLLECTION].insert_one(blog_dict)
