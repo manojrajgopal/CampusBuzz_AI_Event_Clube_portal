@@ -10,8 +10,8 @@ export default function Blogs() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    media: "",
-    mediaType: "url",
+    image: "",
+    imageType: "url",
   });
   const [file, setFile] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -44,12 +44,40 @@ export default function Blogs() {
   }
 
   function handleFileChange(e) {
-    setFile(e.target.files[0]);
-    setError("");
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Validate file size (e.g., 5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setError("File size must be less than 5MB");
+        setFile(null);
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg'];
+      if (!validTypes.includes(selectedFile.type)) {
+        setError("Please select a valid image or video file");
+        setFile(null);
+        return;
+      }
+      
+      setFile(selectedFile);
+      setError("");
+    }
+  }
+
+  // Convert file to base64
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
   }
 
   function resetForm() {
-    setForm({ title: "", content: "", media: "", mediaType: "url" });
+    setForm({ title: "", content: "", image: "", imageType: "url" });
     setFile(null);
     setEditingBlog(null);
     setShowForm(false);
@@ -61,9 +89,10 @@ export default function Blogs() {
     setForm({
       title: blog.title,
       content: blog.content,
-      media: blog.media || "",
-      mediaType: blog.mediaType || "url",
+      image: blog.image || "",
+      imageType: blog.image && blog.image.startsWith('data:') ? "file" : "url",
     });
+    setFile(null);
     setShowForm(true);
   }
 
@@ -74,8 +103,13 @@ export default function Blogs() {
       return;
     }
 
-    if (form.mediaType === "url" && form.media && !isValidUrl(form.media)) {
+    if (form.imageType === "url" && form.image && !isValidUrl(form.image)) {
       setError("Please enter a valid URL");
+      return;
+    }
+
+    if (form.imageType === "file" && !file && !editingBlog) {
+      setError("Please select a file to upload");
       return;
     }
 
@@ -83,34 +117,25 @@ export default function Blogs() {
     setError("");
 
     try {
-      if (form.mediaType === "file" && file) {
-        const formData = new FormData();
-        formData.append("title", form.title);
-        formData.append("content", form.content);
-        formData.append("file", file);
+      let imageData = null;
 
-        if (editingBlog) {
-          await API.put(`/blogs/upload/${editingBlog._id || editingBlog.id}`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-        } else {
-          await API.post("/blogs", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-        }
+      if (form.imageType === "file" && file) {
+        // Convert file to base64
+        imageData = await fileToBase64(file);
+      } else if (form.imageType === "url" && form.image) {
+        imageData = form.image;
+      }
+
+      const data = {
+        title: form.title,
+        content: form.content,
+        image: imageData,
+      };
+
+      if (editingBlog) {
+        await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, data);
       } else {
-        const data = {
-          title: form.title,
-          content: form.content,
-          media: form.media,
-          mediaType: "url",
-        };
-
-        if (editingBlog) {
-          await API.put(`blogs/${editingBlog._id || editingBlog.id}`, data);
-        } else {
-          await API.post("blogs/", data);
-        }
+        await API.post("/blogs/", data);
       }
 
       alert(editingBlog ? "Blog updated!" : "Blog created!");
@@ -118,7 +143,7 @@ export default function Blogs() {
       await fetchBlogs();
     } catch (err) {
       console.error("Error saving blog:", err);
-      setError(err.response?.data?.message || "Error saving blog");
+      setError(err.response?.data?.detail || err.response?.data?.message || "Error saving blog");
     } finally {
       setLoading(false);
     }
@@ -131,7 +156,7 @@ export default function Blogs() {
     }
 
     try {
-      await API.delete(`/api/blogs/${blogId}`);
+      await API.delete(`/blogs/${blogId}`);
       setBlogs(blogs.filter((b) => (b._id || b.id) !== blogId));
       alert("Blog deleted successfully!");
     } catch (err) {
@@ -149,9 +174,9 @@ export default function Blogs() {
     }
   }
 
-  // Enhanced media rendering function
-  function renderMedia(blog) {
-    if (!blog.media) {
+  // Enhanced image rendering function
+  function renderImage(blog) {
+    if (!blog.image) {
       return (
         <div className="blog-media">
           <img 
@@ -163,17 +188,17 @@ export default function Blogs() {
       );
     }
 
-    const mediaUrl = blog.media;
-    const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl) || 
-                   mediaUrl.includes("youtube.com") || 
-                   mediaUrl.includes("vimeo.com") ||
-                   blog.mediaType === "video";
+    const imageUrl = blog.image;
+    const isBase64 = imageUrl.startsWith('data:image');
+    const isVideo = imageUrl.startsWith('data:video') || 
+                   (!isBase64 && /\.(mp4|webm|ogg)$/i.test(imageUrl)) || 
+                   (!isBase64 && (imageUrl.includes("youtube.com") || imageUrl.includes("vimeo.com")));
 
     if (isVideo) {
       return (
         <div className="blog-media">
           <video controls className="blog-video">
-            <source src={mediaUrl} type="video/mp4" />
+            <source src={imageUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
@@ -181,7 +206,15 @@ export default function Blogs() {
     } else {
       return (
         <div className="blog-media">
-          <img src={mediaUrl} alt={blog.title} className="blog-image" />
+          <img 
+            src={imageUrl} 
+            alt={blog.title} 
+            className="blog-image"
+            onError={(e) => {
+              // If image fails to load, show default image
+              e.target.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80";
+            }}
+          />
         </div>
       );
     }
@@ -242,14 +275,14 @@ export default function Blogs() {
               </div>
 
               <div className="form-group full-width">
-                <label>Media Type</label>
+                <label>Image Type</label>
                 <div className="radio-group">
                   <label className="radio-label">
                     <input
                       type="radio"
-                      name="mediaType"
+                      name="imageType"
                       value="url"
-                      checked={form.mediaType === "url"}
+                      checked={form.imageType === "url"}
                       onChange={handleChange}
                     />
                     Use URL
@@ -257,9 +290,9 @@ export default function Blogs() {
                   <label className="radio-label">
                     <input
                       type="radio"
-                      name="mediaType"
+                      name="imageType"
                       value="file"
-                      checked={form.mediaType === "file"}
+                      checked={form.imageType === "file"}
                       onChange={handleChange}
                     />
                     Upload File
@@ -267,27 +300,34 @@ export default function Blogs() {
                 </div>
               </div>
 
-              {form.mediaType === "url" ? (
+              {form.imageType === "url" ? (
                 <div className="form-group full-width">
-                  <label>Media URL</label>
+                  <label>Image URL</label>
                   <input
-                    name="media"
+                    name="image"
                     placeholder="https://example.com/image.jpg"
-                    value={form.media}
+                    value={form.image}
                     onChange={handleChange}
                     className="form-input"
                   />
                 </div>
               ) : (
                 <div className="form-group full-width">
-                  <label>Upload File</label>
+                  <label>Upload File (Max 5MB)</label>
                   <input
                     type="file"
                     accept="image/*,video/*"
                     onChange={handleFileChange}
                     className="form-input"
                   />
-                  {file && <div className="file-name">Selected: {file.name}</div>}
+                  {file && (
+                    <div className="file-name">
+                      Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                  <small style={{color: '#718096', marginTop: '5px'}}>
+                    Supported: JPEG, PNG, GIF, MP4, WebM, OGG
+                  </small>
                 </div>
               )}
             </div>
@@ -342,8 +382,8 @@ export default function Blogs() {
               const blogId = blog._id || blog.id;
               return (
                 <div key={blogId} className="blog-card">
-                  {/* Blog Media */}
-                  {renderMedia(blog)}
+                  {/* Blog Image */}
+                  {renderImage(blog)}
                   
                   <div className="blog-content">
                     <div className="blog-header">
@@ -373,9 +413,9 @@ export default function Blogs() {
                     
                     <div className="blog-meta">
                       {blog.author && <span className="blog-author">By {blog.author}</span>}
-                      {blog.createdAt && (
+                      {blog.created_at && (
                         <span className="blog-date">
-                          {new Date(blog.createdAt).toLocaleDateString()}
+                          {new Date(blog.created_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>
