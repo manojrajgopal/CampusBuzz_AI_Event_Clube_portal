@@ -407,7 +407,7 @@ async def list_teachers_by_club(club_id: str):
 async def getClubs():
     try:
         print("Getting Clubs")
-        cursor = db["clubs"].find({})
+        cursor = db["clubs"].find({"approved": True})  # Only return approved clubs
         clubs_list = []
 
         async for club in cursor:

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from datetime import datetime
 from bson import ObjectId
+from pathlib import Path
+import shutil
 from config.db import db
 from utils.mongo_utils import sanitize_doc
 from models.blog_model import BlogIn, BlogOut
@@ -62,26 +64,26 @@ async def get_blogs():
     blogs = await db[COLLECTION].find().sort("created_at", -1).to_list(100)
     return [sanitize_doc(b) for b in blogs]
 
-# Update Blog
-@router.put("/{blog_id}", response_model=BlogOut)
-async def update_blog(blog_id: str, blog: BlogIn):
+# Update Blog (JSON)
+@router.put("/{blog_id}/json", response_model=BlogOut)
+async def update_blog_json(blog_id: str, blog: BlogIn, user=Depends(require_role(["admin", "club"]))):
     blog_dict = blog.dict()
     blog_dict["updated_at"] = datetime.utcnow()
-    
+
     # Handle base64 media data (same as create)
     if blog_dict.get("media") and blog_dict.get("mediaType") in ["image", "video"]:
         if blog_dict["media"].startswith('data:'):
             # Process base64 data if needed
             pass
-    
+
     result = await db[COLLECTION].update_one(
         {"_id": ObjectId(blog_id)},
         {"$set": blog_dict}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Blog not found")
-    
+
     updated_blog = await db[COLLECTION].find_one({"_id": ObjectId(blog_id)})
     return sanitize_doc(updated_blog)
 

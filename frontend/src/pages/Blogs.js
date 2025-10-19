@@ -126,25 +126,29 @@ export default function Blogs() {
 
         if (editingBlog) {
           await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
           });
         } else {
           await API.post("/blogs", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
           });
         }
       } else {
         const data = {
           title: form.title,
           content: form.content,
-          media: form.media,
-          mediaType: form.mediaType,
+          media: form.image,
+          mediaType: form.imageType,
         };
 
         if (editingBlog) {
-          await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, data);
+          await API.put(`/blogs/${editingBlog._id || editingBlog.id}/json`, data, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
         } else {
-          await API.post("/blogs", data);
+          await API.post("/blogs", data, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
         }
       }
 
@@ -166,8 +170,9 @@ export default function Blogs() {
     }
 
     try {
-      await API.delete(`/blogs/${blogId}`);
-      await API.delete(`/blogs/${blogId}`);
+      await API.delete(`/blogs/${blogId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setBlogs(blogs.filter((b) => (b._id || b.id) !== blogId));
       alert("Blog deleted successfully!");
     } catch (err) {
