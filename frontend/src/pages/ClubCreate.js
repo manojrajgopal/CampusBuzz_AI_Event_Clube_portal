@@ -26,7 +26,6 @@ export default function ClubCreate() {
   const [subleaderDetails, setSubleaderDetails] = useState(null);
   const [validatingUSN, setValidatingUSN] = useState({ leader: false, subleader: false });
   const [students, setStudents] = useState({});
-  const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
 
   // Fetch all students on component mount
@@ -136,17 +135,6 @@ export default function ClubCreate() {
     }, 500);
   };
 
-  // Handle image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.type.startsWith('image/')) {
-        setImageFile(file);
-      } else {
-        alert('Please select a valid image file');
-      }
-    }
-  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -183,22 +171,7 @@ export default function ClubCreate() {
         subleader_USN_id: form.subleader_USN_id,
       };
 
-      // If image is selected, create FormData and append the file
-      if (imageFile) {
-        const formData = new FormData();
-        Object.keys(submissionData).forEach(key => {
-          formData.append(key, submissionData[key]);
-        });
-        formData.append('club_image', imageFile);
-        
-        await API.post("/clubs/apply/create", formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-      } else {
-        await API.post("/clubs/apply/create", submissionData);
-      }
+      await API.post("/clubs/apply/create", submissionData);
 
       alert("✅ Club creation request submitted! Wait for admin approval.");
       navigate("/");
@@ -335,31 +308,6 @@ export default function ClubCreate() {
               </small>
             </div>
 
-            {/* Image Upload Section */}
-            <div className="form-group full-width">
-              <label htmlFor="club_image">Club Image</label>
-              <div className="image-upload-container">
-                <input
-                  type="file"
-                  id="club_image"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="image-upload-input"
-                />
-                <label htmlFor="club_image" className="image-upload-label">
-                  <span className="upload-icon">📷</span>
-                  {imageFile ? imageFile.name : "Choose Club Image"}
-                </label>
-                {imageFile && (
-                  <div className="image-preview">
-                    <small>Selected: {imageFile.name}</small>
-                  </div>
-                )}
-              </div>
-              <small className="input-hint">
-                Upload an image that represents your club (optional)
-              </small>
-            </div>
           </div>
 
           {/* Leadership Section */}

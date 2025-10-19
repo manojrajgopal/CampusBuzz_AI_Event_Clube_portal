@@ -12,7 +12,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 # --------------------------
 # Clubs Management
 # --------------------------
-@router.get("/clubs")
+@router.get("/clubs", dependencies=[Depends(require_role(["admin"]))])
 async def get_all_clubs():
     clubs = []
     try:
@@ -22,6 +22,11 @@ async def get_all_clubs():
             club_data = serialize_club(club)
             # Include teachers
             club_data["teachers"] = await list_teachers_by_club(club_data["id"])
+            # Get leader info
+            club_data["leader"] = await db.users.find_one(
+                {"_id": ObjectId(club_data.get("leader_id"))},
+                {"_id": 0, "name": 1, "email": 1, "mobile": 1}
+            ) if club_data.get("leader_id") else None
             clubs.append(club_data)
         return clubs
     except Exception as e:
@@ -137,23 +142,28 @@ async def update_teacher(teacher_id: str, teacher_data: dict):
     print("teacher_id:", teacher_id)
     print("teacher_data:", teacher_data)
 
-    # Update the club by adding teacher_id to its "teachers" list if club_name is provided
+    # Update the teacher with new data
+    update_fields = {}
+    if "name" in teacher_data:
+        update_fields["name"] = teacher_data["name"]
+    if "email" in teacher_data:
+        update_fields["email"] = teacher_data["email"]
+    if "mobile" in teacher_data:
+        update_fields["mobile"] = teacher_data["mobile"]
     if "club_id" in teacher_data:
-        await db.clubs.update_one(
-            {"name": teacher_data["club_id"]},  # match by club name
-            {"$addToSet": {"teachers": teacher_id}}  # prevents duplicates
-        )
+        update_fields["club_id"] = ObjectId(teacher_data["club_id"])
+        # Get club name for display
+        club = await db.clubs.find_one({"_id": ObjectId(teacher_data["club_id"])})
+        if club:
+            update_fields["club_name"] = club["name"]
+
+    if update_fields:
         await db.teachers.update_one(
             {"_id": ObjectId(teacher_id)},
-            {
-                "$set": {
-                    "club_name": teacher_data["club_id"]
-                }
-            }
+            {"$set": update_fields}
         )
-        return {"status": "ok", "message": "teacher saved completed"}
 
-    return {"status": "ok", "message": "teacher already there"}
+    return {"status": "ok", "message": "teacher updated successfully"}
 
 @router.delete("/teachers/{teacher_id}", dependencies=[Depends(require_role(["admin"]))])
 async def delete_teacher(teacher_id: str):

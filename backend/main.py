@@ -3,6 +3,8 @@ import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from middleware.auth_middleware import get_current_user, require_role
 from routes import (auth_routes,
                     event_routes,
@@ -17,6 +19,29 @@ from routes.blog_routes import router as blog_router
 from routes.event_scraper_routes import router as event_scraper_router
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
+
+# Custom exception handler for RequestValidationError to handle bytes safely
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    # Safely encode errors, handling bytes objects
+    def safe_encode(obj):
+        if isinstance(obj, bytes):
+            try:
+                return obj.decode('utf-8')
+            except UnicodeDecodeError:
+                return repr(obj)  # Fallback to repr for non-utf8 bytes
+        elif isinstance(obj, dict):
+            return {k: safe_encode(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [safe_encode(item) for item in obj]
+        else:
+            return obj
+
+    errors = safe_encode(exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+    )
 
 origins = ["*"]
 
