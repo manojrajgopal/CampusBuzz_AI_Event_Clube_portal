@@ -29,7 +29,7 @@ export default function Blogs() {
     setLoading(true);
     setError("");
     try {
-      const res = await API.get("/blogs/");
+      const res = await API.get("/blogs");
       setBlogs(res.data);
     } catch (err) {
       console.error("Error fetching blogs:", err);
@@ -87,10 +87,11 @@ export default function Blogs() {
         const formData = new FormData();
         formData.append("title", form.title);
         formData.append("content", form.content);
+        formData.append("mediaType", "file");
         formData.append("file", file);
 
         if (editingBlog) {
-          await API.put(`/blogs/upload/${editingBlog._id || editingBlog.id}`, formData, {
+          await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         } else {
@@ -103,13 +104,13 @@ export default function Blogs() {
           title: form.title,
           content: form.content,
           media: form.media,
-          mediaType: "url",
+          mediaType: form.mediaType,
         };
 
         if (editingBlog) {
-          await API.put(`blogs/${editingBlog._id || editingBlog.id}`, data);
+          await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, data);
         } else {
-          await API.post("blogs/", data);
+          await API.post("/blogs", data);
         }
       }
 
@@ -131,12 +132,12 @@ export default function Blogs() {
     }
 
     try {
-      await API.delete(`/api/blogs/${blogId}`);
+      await API.delete(`/blogs/${blogId}`);
       setBlogs(blogs.filter((b) => (b._id || b.id) !== blogId));
       alert("Blog deleted successfully!");
     } catch (err) {
       console.error("Error deleting blog:", err);
-      alert("Error deleting blog");
+      alert("Error deleting blog: " + (err.response?.data?.detail || err.message));
     }
   }
 
@@ -154,9 +155,9 @@ export default function Blogs() {
     if (!blog.media) {
       return (
         <div className="blog-media">
-          <img 
-            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" 
-            alt="Blog default" 
+          <img
+            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80"
+            alt="Blog default"
             className="blog-image"
           />
         </div>
@@ -164,8 +165,8 @@ export default function Blogs() {
     }
 
     const mediaUrl = blog.media;
-    const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl) || 
-                   mediaUrl.includes("youtube.com") || 
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl) ||
+                   mediaUrl.includes("youtube.com") ||
                    mediaUrl.includes("vimeo.com") ||
                    blog.mediaType === "video";
 
@@ -179,9 +180,11 @@ export default function Blogs() {
         </div>
       );
     } else {
+      // For uploaded files, construct the full URL
+      const imageUrl = blog.mediaType === "file" ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split('/').pop()}` : mediaUrl;
       return (
         <div className="blog-media">
-          <img src={mediaUrl} alt={blog.title} className="blog-image" />
+          <img src={imageUrl} alt={blog.title} className="blog-image" />
         </div>
       );
     }
@@ -373,9 +376,9 @@ export default function Blogs() {
                     
                     <div className="blog-meta">
                       {blog.author && <span className="blog-author">By {blog.author}</span>}
-                      {blog.createdAt && (
+                      {blog.created_at && (
                         <span className="blog-date">
-                          {new Date(blog.createdAt).toLocaleDateString()}
+                          {new Date(blog.created_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>

@@ -2,11 +2,12 @@
 import uvicorn
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from middleware.auth_middleware import get_current_user, require_role
-from routes import (auth_routes, 
+from routes import (auth_routes,
                     event_routes,
-                      club_routes, 
-                      registration_routes, 
+                      club_routes,
+                      registration_routes,
                       student_routes,
                        admin_routes,
                        chatbot_routes as chatbot_router)
@@ -27,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Static files for uploads ---
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # --- Include routers ---
 app.include_router(auth_routes.router)
