@@ -10,8 +10,8 @@ export default function Blogs() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    media: "",
-    mediaType: "url",
+    image: "",
+    imageType: "url",
   });
   const [file, setFile] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -44,12 +44,40 @@ export default function Blogs() {
   }
 
   function handleFileChange(e) {
-    setFile(e.target.files[0]);
-    setError("");
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Validate file size (e.g., 5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setError("File size must be less than 5MB");
+        setFile(null);
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg'];
+      if (!validTypes.includes(selectedFile.type)) {
+        setError("Please select a valid image or video file");
+        setFile(null);
+        return;
+      }
+      
+      setFile(selectedFile);
+      setError("");
+    }
+  }
+
+  // Convert file to base64
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
   }
 
   function resetForm() {
-    setForm({ title: "", content: "", media: "", mediaType: "url" });
+    setForm({ title: "", content: "", image: "", imageType: "url" });
     setFile(null);
     setEditingBlog(null);
     setShowForm(false);
@@ -61,9 +89,10 @@ export default function Blogs() {
     setForm({
       title: blog.title,
       content: blog.content,
-      media: blog.media || "",
-      mediaType: blog.mediaType || "url",
+      image: blog.image || "",
+      imageType: blog.image && blog.image.startsWith('data:') ? "file" : "url",
     });
+    setFile(null);
     setShowForm(true);
   }
 
@@ -74,8 +103,13 @@ export default function Blogs() {
       return;
     }
 
-    if (form.mediaType === "url" && form.media && !isValidUrl(form.media)) {
+    if (form.imageType === "url" && form.image && !isValidUrl(form.image)) {
       setError("Please enter a valid URL");
+      return;
+    }
+
+    if (form.imageType === "file" && !file && !editingBlog) {
+      setError("Please select a file to upload");
       return;
     }
 
@@ -119,7 +153,7 @@ export default function Blogs() {
       await fetchBlogs();
     } catch (err) {
       console.error("Error saving blog:", err);
-      setError(err.response?.data?.message || "Error saving blog");
+      setError(err.response?.data?.detail || err.response?.data?.message || "Error saving blog");
     } finally {
       setLoading(false);
     }
@@ -132,6 +166,7 @@ export default function Blogs() {
     }
 
     try {
+      await API.delete(`/blogs/${blogId}`);
       await API.delete(`/blogs/${blogId}`);
       setBlogs(blogs.filter((b) => (b._id || b.id) !== blogId));
       alert("Blog deleted successfully!");
@@ -150,9 +185,9 @@ export default function Blogs() {
     }
   }
 
-  // Enhanced media rendering function
-  function renderMedia(blog) {
-    if (!blog.media) {
+  // Enhanced image rendering function
+  function renderImage(blog) {
+    if (!blog.image) {
       return (
         <div className="blog-media">
           <img
@@ -174,7 +209,7 @@ export default function Blogs() {
       return (
         <div className="blog-media">
           <video controls className="blog-video">
-            <source src={mediaUrl} type="video/mp4" />
+            <source src={imageUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
@@ -245,14 +280,14 @@ export default function Blogs() {
               </div>
 
               <div className="form-group full-width">
-                <label>Media Type</label>
+                <label>Image Type</label>
                 <div className="radio-group">
                   <label className="radio-label">
                     <input
                       type="radio"
-                      name="mediaType"
+                      name="imageType"
                       value="url"
-                      checked={form.mediaType === "url"}
+                      checked={form.imageType === "url"}
                       onChange={handleChange}
                     />
                     Use URL
@@ -260,9 +295,9 @@ export default function Blogs() {
                   <label className="radio-label">
                     <input
                       type="radio"
-                      name="mediaType"
+                      name="imageType"
                       value="file"
-                      checked={form.mediaType === "file"}
+                      checked={form.imageType === "file"}
                       onChange={handleChange}
                     />
                     Upload File
@@ -270,27 +305,34 @@ export default function Blogs() {
                 </div>
               </div>
 
-              {form.mediaType === "url" ? (
+              {form.imageType === "url" ? (
                 <div className="form-group full-width">
-                  <label>Media URL</label>
+                  <label>Image URL</label>
                   <input
-                    name="media"
+                    name="image"
                     placeholder="https://example.com/image.jpg"
-                    value={form.media}
+                    value={form.image}
                     onChange={handleChange}
                     className="form-input"
                   />
                 </div>
               ) : (
                 <div className="form-group full-width">
-                  <label>Upload File</label>
+                  <label>Upload File (Max 5MB)</label>
                   <input
                     type="file"
                     accept="image/*,video/*"
                     onChange={handleFileChange}
                     className="form-input"
                   />
-                  {file && <div className="file-name">Selected: {file.name}</div>}
+                  {file && (
+                    <div className="file-name">
+                      Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                  <small style={{color: '#718096', marginTop: '5px'}}>
+                    Supported: JPEG, PNG, GIF, MP4, WebM, OGG
+                  </small>
                 </div>
               )}
             </div>
@@ -345,8 +387,8 @@ export default function Blogs() {
               const blogId = blog._id || blog.id;
               return (
                 <div key={blogId} className="blog-card">
-                  {/* Blog Media */}
-                  {renderMedia(blog)}
+                  {/* Blog Image */}
+                  {renderImage(blog)}
                   
                   <div className="blog-content">
                     <div className="blog-header">
@@ -377,7 +419,9 @@ export default function Blogs() {
                     <div className="blog-meta">
                       {blog.author && <span className="blog-author">By {blog.author}</span>}
                       {blog.created_at && (
+                      {blog.created_at && (
                         <span className="blog-date">
+                          {new Date(blog.created_at).toLocaleDateString()}
                           {new Date(blog.created_at).toLocaleDateString()}
                         </span>
                       )}

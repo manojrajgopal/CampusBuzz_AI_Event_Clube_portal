@@ -230,9 +230,9 @@ label {
 
 .leader-card {
   padding: 1.5rem;
-  background: white;
+  background: rgb(219, 87, 109);
   border-radius: 15px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #186fe0;
   transition: all 0.3s ease;
 }
 
