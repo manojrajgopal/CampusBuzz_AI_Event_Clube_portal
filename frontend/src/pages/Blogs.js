@@ -209,7 +209,7 @@ export default function Blogs() {
       return (
         <div className="blog-media">
           <video controls className="blog-video">
-            <source src={imageUrl} type="video/mp4" />
+            <source src={mediaUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
@@ -419,9 +419,7 @@ export default function Blogs() {
                     <div className="blog-meta">
                       {blog.author && <span className="blog-author">By {blog.author}</span>}
                       {blog.created_at && (
-                      {blog.created_at && (
                         <span className="blog-date">
-                          {new Date(blog.created_at).toLocaleDateString()}
                           {new Date(blog.created_at).toLocaleDateString()}
                         </span>
                       )}
