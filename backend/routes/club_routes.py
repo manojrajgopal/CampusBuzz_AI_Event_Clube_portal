@@ -6,6 +6,7 @@ from datetime import datetime
 from passlib.context import CryptContext
 from bson.errors import InvalidId
 import json
+import base64
 from models.club_model import (
     ClubIn,
     ClubOut,
@@ -57,6 +58,7 @@ def serialize_club(club) -> dict:
         "email": club.get("email", ""),
         "leader_id": str(club.get("leader_id", "")),
         "subleader": club.get("subleader", {}),
+        "image_base64": club.get("image_base64", ""),  # Add image_base64 to serialization
     }
 
 # ----------------- Core Club Functions -----------------
@@ -228,6 +230,7 @@ async def apply_create_club(application, user_id: str):
     - Uses Gemini for enhancement.
     - Fetches leader/subleader details.
     - Validates leader/subleader existence.
+    - Handles image_base64 field.
     """
 
     app_data = application.dict()
@@ -256,7 +259,8 @@ async def apply_create_club(application, user_id: str):
         "leader_data": leader,
         "subleader_data": subleader,
         "applied_at": datetime.utcnow(),
-        "status": "pending"
+        "status": "pending",
+        "image_base64": app_data.get("image_base64", "")  # Store image_base64 from application
     })
 
     # ✅ 4. Insert into collection
@@ -342,6 +346,7 @@ async def approve_club_application(application_id: str, admin_id: str):
         "purpose": app.get("purpose", ""),
         "type": app.get("type", "General"),
         "email": app.get("club_email"),
+        "image_base64": app.get("image_base64", ""),  # Store image_base64 in club document
         "leader_id": normalize_id(app["user_id"]),
         "leader_data": app.get("leader_data", {}),
         "subleader": {
@@ -354,6 +359,7 @@ async def approve_club_application(application_id: str, admin_id: str):
         "members": [normalize_id(app["user_id"])],
         "created_by": normalize_id(admin_id),
         "requests": []
+        
     }
 
     # Insert into clubs collection
@@ -407,7 +413,8 @@ async def getClubs():
         async for club in cursor:
             clubs_list.append({
                 "id": str(club["_id"]),
-                "name": club.get("name", "")
+                "name": club.get("name", ""),
+                "image_base64": club.get("image_base64", "")  # Include image_base64 in response
             })
 
         print(clubs_list)
@@ -455,6 +462,7 @@ async def get_club(club_id: str):
         club["id"] = str(club.pop("_id"))  # ✅ Pydantic expects `id`
         club["description"] = club.get("description", "No description provided")
         club["created_by"] = str(club.get("created_by", "unknown"))
+        club["image_base64"] = club.get("image_base64", "")  # Include image_base64 in response
 
         # Get leader info
         club["leader"] = await db.users.find_one(
@@ -582,11 +590,57 @@ async def join_club_application(request: Request, user=Depends(get_current_user)
 # Student applies to create a new club
 @router.post("/apply/create")
 async def create_club_application(
-    application: CreateClubApplication,
+    request: Request,  # Change to Request to handle multipart/form-data
     user=Depends(require_role(["student", "admin"]))
 ):
-    return await apply_create_club(application, user["_id"])
-
+    try:
+        # Handle both JSON and form data
+        content_type = request.headers.get("content-type", "")
+        
+        if "multipart/form-data" in content_type:
+            # Handle form data with file upload
+            form_data = await request.form()
+            
+            # Extract text fields
+            application_data = {
+                "club_name": form_data.get("club_name"),
+                "club_email": form_data.get("club_email"),
+                "club_password": form_data.get("club_password"),
+                "description": form_data.get("description"),
+                "purpose": form_data.get("purpose"),
+                "leader_USN_id": form_data.get("leader_USN_id"),
+                "subleader_USN_id": form_data.get("subleader_USN_id"),
+            }
+            
+            # Handle image file
+            image_file = form_data.get("club_image")
+            if image_file and hasattr(image_file, 'file'):
+                # Read and encode the image file to base64
+                image_bytes = await image_file.read()
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                application_data["image_base64"] = image_base64
+            
+            # Validate required fields
+            required_fields = ["club_name", "club_email", "club_password", "leader_USN_id", "subleader_USN_id"]
+            for field in required_fields:
+                if not application_data.get(field):
+                    raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+            
+            # Create application object
+            application = CreateClubApplication(**application_data)
+            
+        else:
+            # Handle JSON data (existing functionality)
+            data = await request.json()
+            application = CreateClubApplication(**data)
+        
+        return await apply_create_club(application, user["_id"])
+        
+    except Exception as e:
+        print(f"Error in create_club_application: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    
 @router.post("/applications/{app_id}/approve", dependencies=[Depends(require_role(["admin"]))])
 async def approve_application(app_id: str, user=Depends(require_role(["admin"]))):
     try:
@@ -606,10 +660,14 @@ async def approve_application(app_id: str, user=Depends(require_role(["admin"]))
             print("DEBUG: Application not found in database")
             raise HTTPException(status_code=404, detail="Application not found")
 
-        # Check if club email exists
-        existing = await db[USERS_COLLECTION].find_one({"email": app["club_email"]})
-        print(f"DEBUG: Existing user check for email {app['club_email']}: {existing}")
-        if existing:
+        # Check if club email exists - MODIFIED: Check both users and clubs collections
+        existing_user = await db[USERS_COLLECTION].find_one({"email": app["club_email"]})
+        print(f"DEBUG: Existing user check for email {app['club_email']}: {existing_user}")
+        
+        existing_club = await db[COLLECTION].find_one({"email": app["club_email"]})
+        print(f"DEBUG: Existing club check for email {app['club_email']}: {existing_club}")
+
+        if existing_user or existing_club:
             print("DEBUG: Club email already in use")
             raise HTTPException(status_code=400, detail="Club email already in use")
 
@@ -636,6 +694,7 @@ async def approve_application(app_id: str, user=Depends(require_role(["admin"]))
             "purpose": app.get("purpose", ""),
             "type": app.get("type", "General"),
             "email": app.get("club_email"),
+            "image_base64": app.get("image_base64", ""),  # Include image_base64 in club creation
             "leader_id": ObjectId(app["user_id"]),
             "leader_data": app.get("leader_data", {}),
             "subleader": {
