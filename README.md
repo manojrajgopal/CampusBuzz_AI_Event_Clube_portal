@@ -6,6 +6,7 @@ CampusBuzz is a web-based platform that allows students to create clubs, apply t
 
 ## System Structure
 
+```bash
 CampusBuzz/
 │
 ├── backend/ # FastAPI backend
@@ -24,7 +25,7 @@ CampusBuzz/
 │ └── package.json
 │
 └── README.md # Project documentation
-
+```
 
 ---
 

@@ -37,7 +37,7 @@ export default function EventParticipants() {
     <div style={{ padding: "20px" }}>
       <h2>Participants</h2>
       {participants.map((p) => (
-        <div key={p.id} style={{ border: "1px solid #ccc", margin: "10px", padding: "10px" }}>
+        <div key={p.id} style={{ border: "1px solid #ccc", margin: "10px", padding: "10px", color: "black" }}>
           <p>User ID: {p.user_id}</p>
           <p>Checked-in: {p.checked_in ? "Yes" : "No"}</p>
           {!p.checked_in && <button onClick={() => checkIn(p.user_id)}>Check-in</button>}

@@ -406,8 +406,8 @@ async def list_teachers_by_club(club_id: str):
 @router.get("/")
 async def getClubs():
     try:
-     
-        cursor = db["clubs"].find({})
+        print("Getting Clubs")
+        cursor = db["clubs"].find({"approved": True})  # Only return approved clubs
         clubs_list = []
 
         async for club in cursor:
