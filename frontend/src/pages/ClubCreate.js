@@ -26,6 +26,7 @@ export default function ClubCreate() {
   const [subleaderDetails, setSubleaderDetails] = useState(null);
   const [validatingUSN, setValidatingUSN] = useState({ leader: false, subleader: false });
   const [students, setStudents] = useState({});
+  const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
 
   // Fetch all students on component mount
