@@ -623,9 +623,6 @@ function EventCard({ event, onRegister, index }) {
             <span className="btn-icon">🎯</span>
             Register Now
           </button>
-          <button className="details-btn">
-            View Details
-          </button>
         </div>
       </div>
 
