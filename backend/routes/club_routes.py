@@ -180,7 +180,7 @@ async def enhance_with_gemini(description: str, purpose: str):
             )
 
         if response.status_code != 200:
-            print(f"Gemini API error: {response.status_code} - {response.text}")
+            
             return {
                 "enhanced_description": description,
                 "enhanced_purpose": purpose,
@@ -207,7 +207,7 @@ async def enhance_with_gemini(description: str, purpose: str):
         return enhanced
         
     except Exception as e:
-        print(f"Error enhancing with Gemini: {str(e)}")
+        
         # Return original data if Gemini fails
         return {
             "enhanced_description": description,
@@ -417,10 +417,10 @@ async def getClubs():
                 "image_base64": club.get("image_base64", "")  # Include image_base64 in response
             })
 
-        print(clubs_list)
+       
         return clubs_list
     except Exception as e:
-        print("Error fetching clubs:", e)
+    
         return {"error": "Failed to fetch clubs"}
 
 def convert_objectid(data):
@@ -445,7 +445,7 @@ async def get_pending_applications():
 
         return converted_apps
     except Exception as e:
-        print(f"Error fetching applications: {e}")
+      
         raise HTTPException(status_code=500, detail="Error fetching applications")
 
 @router.get("/{club_id}")
@@ -470,7 +470,7 @@ async def get_club(club_id: str):
             {"_id": 0, "name": 1, "email": 1, "mobile": 1}
         ) if club.get("leader_id") else None
 
-        print("Here")
+     
         # Convert members ObjectIds to names
         requests_final = []
         for r in club.get("requests", []):
@@ -524,7 +524,7 @@ async def get_club(club_id: str):
                         {"_id": ObjectId(t)},   # convert string to ObjectId
                         {"_id": 0, "name": 1, "email": 1}
                     )
-                    print(user)
+                  
                     if user:
                         teachers_final.append({
                             "id": str(t),
@@ -536,15 +536,15 @@ async def get_club(club_id: str):
                 else:
                     teachers_final.append({"id": None, "name": str(t), "email": None})
             except Exception as e:
-                print("Error processing teacher:", str(e))
+               
                 teachers_final.append({"id": None, "name": str(t), "email": None})
 
         club["teachers"] = teachers_final
 
         club["created_at"] = club.get("created_at") or datetime.utcnow()
 
-        print(club)
-        print("To here")
+   
+    
         return club
 
     except Exception as e:

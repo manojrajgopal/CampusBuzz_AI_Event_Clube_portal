@@ -30,7 +30,6 @@ async def get_all_clubs():
             clubs.append(club_data)
         return clubs
     except Exception as e:
-        print("Error fetching clubs:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/clubs/{club_id}/approve")
@@ -139,8 +138,7 @@ async def get_all_teachers():
 
 @router.put("/teachers/{teacher_id}", dependencies=[Depends(require_role(["admin"]))])
 async def update_teacher(teacher_id: str, teacher_data: dict):
-    print("teacher_id:", teacher_id)
-    print("teacher_data:", teacher_data)
+
 
     # Update the teacher with new data
     update_fields = {}

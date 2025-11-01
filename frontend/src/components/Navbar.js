@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
@@ -125,64 +124,21 @@ export default function Navbar() {
 
   return (
     <>
-      <nav
-        style={{
-          padding: "12px 30px",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
-          boxShadow: "0 2px 20px rgba(0,0,0,0.1)",
-          fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-          backdropFilter: "blur(10px)",
-          borderBottom: "1px solid rgba(255,255,255,0.1)"
-        }}
-      >
+      <nav className="navbar-container">
         {/* Logo Section */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{
-            width: "42px",
-            height: "42px",
-            background: "linear-gradient(45deg, #ff6b6b, #feca57)",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: "12px",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease"
-          }}
-          onMouseEnter={(e) => e.target.style.transform = "rotate(5deg) scale(1.05)"}
-          onMouseLeave={(e) => e.target.style.transform = "rotate(0deg) scale(1)"}
+        <div className="navbar-logo-section">
+          <div 
+            className="navbar-logo-icon"
+            onMouseEnter={(e) => e.target.style.transform = "rotate(5deg) scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "rotate(0deg) scale(1)"}
           >
-            <span style={{ 
-              color: "white", 
-              fontWeight: "800", 
-              fontSize: "16px",
-              textShadow: "1px 1px 2px rgba(0,0,0,0.3)"
-            }}>CE</span>
+            <span className="navbar-logo-text">CE</span>
           </div>
-          <span style={{ 
-            color: "white", 
-            fontWeight: "700", 
-            fontSize: "20px",
-            textShadow: "1px 1px 2px rgba(0,0,0,0.2)",
-            letterSpacing: "-0.5px"
-          }}>CampusBuzz</span>
+          <span className="navbar-brand-text">CampusBuzz</span>
         </div>
 
         {/* Navigation Links - Center */}
-        <div style={{ 
-          display: "flex", 
-          gap: "8px", 
-          alignItems: "center",
-          background: "rgba(255,255,255,0.1)",
-          borderRadius: "25px",
-          padding: "4px"
-        }}>
+        <div className="navbar-links-container">
           <Link 
             to="/" 
             onClick={(e) => {
@@ -192,16 +148,7 @@ export default function Navbar() {
                 window.history.pushState(null, '', '/');
               }
             }}
-            style={{ 
-              color: "white", 
-              textDecoration: "none", 
-              fontWeight: "600",
-              padding: "8px 20px",
-              borderRadius: "20px",
-              transition: "all 0.3s ease",
-              fontSize: "14px",
-              background: window.location.pathname === "/" && !window.location.hash ? "rgba(255,255,255,0.2)" : "transparent"
-            }}
+            className={`navbar-link ${window.location.pathname === "/" && !window.location.hash ? 'navbar-link-active' : ''}`}
             onMouseEnter={(e) => {
               if (!(window.location.pathname === "/" && !window.location.hash)) {
                 e.target.style.background = "rgba(255,255,255,0.15)";
@@ -219,15 +166,7 @@ export default function Navbar() {
           <Link 
             to="/#information" 
             onClick={(e) => handleSmoothScroll(e, '#information')}
-            style={{ 
-              color: "white", 
-              textDecoration: "none", 
-              fontWeight: "600",
-              padding: "8px 20px",
-              borderRadius: "20px",
-              transition: "all 0.3s ease",
-              fontSize: "14px"
-            }}
+            className="navbar-link"
             onMouseEnter={(e) => {
               e.target.style.background = "rgba(255,255,255,0.15)";
             }}
@@ -240,16 +179,7 @@ export default function Navbar() {
           
           <Link 
             to="/events" 
-            style={{ 
-              color: "white", 
-              textDecoration: "none", 
-              fontWeight: "600",
-              padding: "8px 20px",
-              borderRadius: "20px",
-              transition: "all 0.3s ease",
-              fontSize: "14px",
-              background: window.location.pathname === "/events" ? "rgba(255,255,255,0.2)" : "transparent"
-            }}
+            className={`navbar-link ${window.location.pathname === "/events" ? 'navbar-link-active' : ''}`}
             onMouseEnter={(e) => {
               if (window.location.pathname !== "/events") {
                 e.target.style.background = "rgba(255,255,255,0.15)";
@@ -266,16 +196,7 @@ export default function Navbar() {
           
           <Link 
             to="/blogs" 
-            style={{ 
-              color: "white", 
-              textDecoration: "none", 
-              fontWeight: "600",
-              padding: "8px 20px",
-              borderRadius: "20px",
-              transition: "all 0.3s ease",
-              fontSize: "14px",
-              background: window.location.pathname === "/blogs" ? "rgba(255,255,255,0.2)" : "transparent"
-            }}
+            className={`navbar-link ${window.location.pathname === "/blogs" ? 'navbar-link-active' : ''}`}
             onMouseEnter={(e) => {
               if (window.location.pathname !== "/blogs") {
                 e.target.style.background = "rgba(255,255,255,0.15)";
@@ -293,15 +214,7 @@ export default function Navbar() {
           <Link 
             to="/#contact"
             onClick={(e) => handleSmoothScroll(e, '#contact')}
-            style={{ 
-              color: "white", 
-              textDecoration: "none", 
-              fontWeight: "600",
-              padding: "8px 20px",
-              borderRadius: "20px",
-              transition: "all 0.3s ease",
-              fontSize: "14px"
-            }}
+            className="navbar-link"
             onMouseEnter={(e) => {
               e.target.style.background = "rgba(255,255,255,0.15)";
             }}
@@ -314,32 +227,11 @@ export default function Navbar() {
         </div>
 
         {/* Auth Section - Right Side */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="navbar-auth-section">
           {/* Create Club button - hidden for club role */}
           {role !== "club" && (
             <Link to="/club/create">
-              <button
-                style={{
-                  background: "linear-gradient(45deg, #ff9a9e, #fad0c4)",
-                  border: "none",
-                  padding: "10px 20px",
-                  borderRadius: "20px",
-                  color: "#333",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                  fontSize: "14px"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = "translateY(-2px)";
-                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = "translateY(0)";
-                  e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-                }}
-              >
+              <button className="navbar-create-club-btn">
                 Create Club
               </button>
             </Link>
@@ -347,107 +239,31 @@ export default function Navbar() {
 
           {/* Login/Profile Section */}
           {role === "admin" && token ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="navbar-admin-section">
               <Link to="/admin">
-                <button
-                  style={{
-                    background: "linear-gradient(45deg, #ff6b6b, #feca57)",
-                    border: "none",
-                    padding: "10px 20px",
-                    borderRadius: "20px",
-                    color: "white",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    fontSize: "14px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-                  }}
-                >
+                <button className="navbar-admin-dashboard-btn">
                   Admin Dashboard
                 </button>
               </Link>
               <button 
                 onClick={handleLogout}
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  padding: "10px 20px",
-                  borderRadius: "20px",
-                  color: "white",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  fontSize: "14px"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = "rgba(255,255,255,0.25)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = "rgba(255,255,255,0.15)";
-                  e.target.style.transform = "translateY(0)";
-                }}
+                className="navbar-logout-btn"
               >
                 Logout
               </button>
             </div>
           ) : role === "student" && token ? (
             <div style={{ position: "relative" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="navbar-student-section">
                 <button 
                   onClick={() => setShowPopup(!showPopup)}
-                  style={{
-                    background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                    border: "none",
-                    padding: "10px 20px",
-                    borderRadius: "20px",
-                    color: "white",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    fontSize: "14px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-                  }}
+                  className="navbar-profile-btn"
                 >
                   My Profile
                 </button>
                 <button 
                   onClick={handleLogout} 
-                  style={{
-                    background: "rgba(255,255,255,0.15)",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    padding: "10px 20px",
-                    borderRadius: "20px",
-                    color: "white",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    fontSize: "14px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = "rgba(255,255,255,0.25)";
-                    e.target.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = "rgba(255,255,255,0.15)";
-                    e.target.style.transform = "translateY(0)";
-                  }}
+                  className="navbar-logout-btn"
                 >
                   Logout
                 </button>
@@ -456,171 +272,77 @@ export default function Navbar() {
               {showPopup && (
                 <div
                   ref={popupRef}
-                  style={{
-                    position: "absolute",
-                    top: "60px",
-                    right: "0",
-                    background: "white",
-                    border: "none",
-                    borderRadius: "16px",
-                    padding: "24px",
-                    width: "420px",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                    zIndex: 1000,
-                    animation: "slideDown 0.3s ease"
-                  }}
+                  className="profile-popup"
                 >
-                  <h3 style={{ 
-                    margin: "0 0 20px 0", 
-                    color: "#333", 
-                    borderBottom: "2px solid #4ecdc4", 
-                    paddingBottom: "12px",
-                    fontSize: "18px",
-                    fontWeight: "700",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px"
-                  }}>
-                    <span style={{
-                      width: "32px",
-                      height: "32px",
-                      background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      fontSize: "14px",
-                      fontWeight: "600"
-                    }}>👤</span>
+                  <h3 className="profile-popup-title">
+                    <span className="profile-icon">👤</span>
                     Student Profile
                   </h3>
                   
                   {profile && !isEditing ? (
-                    <div style={{ lineHeight: "1.6", fontSize: "14px", color: "#555" }}>
+                    <div className="profile-view">
                       {/* Profile Photo and Basic Info Section */}
-                      <div style={{ 
-                        display: "flex", 
-                        gap: "20px", 
-                        alignItems: "flex-start",
-                        marginBottom: "20px",
-                        paddingBottom: "20px",
-                        borderBottom: "1px solid #f0f0f0"
-                      }}>
-                        <div style={{
-                          width: "80px",
-                          height: "80px",
-                          borderRadius: "50%",
-                          background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(45deg, #667eea, #764ba2)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "24px",
-                          boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                          border: "3px solid #4ecdc4"
-                        }}>
+                      <div className="profile-header">
+                        <div className="profile-photo-display">
                           {!profilePhoto && (profile.name ? profile.name.charAt(0).toUpperCase() : "S")}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ 
-                            margin: "0 0 8px 0", 
-                            color: "#333", 
-                            fontSize: "18px",
-                            fontWeight: "700"
-                          }}>
+                        <div className="profile-basic-info">
+                          <h4 className="profile-name">
                             {profile.name}
                           </h4>
-                          <p style={{ 
-                            margin: "0 0 6px 0", 
-                            color: "#666",
-                            fontSize: "14px"
-                          }}>
+                          <p className="profile-usn">
                             <b>USN:</b> {profile.USN_id}
                           </p>
-                          <p style={{ 
-                            margin: "0 0 6px 0", 
-                            color: "#666",
-                            fontSize: "14px"
-                          }}>
+                          <p className="profile-year-dept">
                             <b>Year:</b> {profile.year} • <b>Dept:</b> {profile.department}
                           </p>
-                          <p style={{ 
-                            margin: "0", 
-                            color: "#4ecdc4",
-                            fontSize: "13px",
-                            fontWeight: "600"
-                          }}>
+                          <p className="profile-email">
                             {profile.email}
                           </p>
                         </div>
                       </div>
 
                       {/* Detailed Information Section */}
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "1fr 1fr", 
-                        gap: "15px",
-                        marginBottom: "20px"
-                      }}>
+                      <div className="profile-details-grid">
                         <div>
-                          <p style={{ margin: "0 0 8px 0" }}>
-                            <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Mobile</b>
-                            <span style={{ color: "#666" }}>{profile.mobile}</span>
+                          <p className="profile-detail-item">
+                            <b className="detail-label">Mobile</b>
+                            <span className="detail-value">{profile.mobile}</span>
                           </p>
                         </div>
                         <div>
-                          <p style={{ margin: "0 0 8px 0" }}>
-                            <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Interests</b>
-                            <span style={{ color: "#666" }}>{profile.interests?.join(", ") || "None"}</span>
+                          <p className="profile-detail-item">
+                            <b className="detail-label">Interests</b>
+                            <span className="detail-value">{profile.interests?.join(", ") || "None"}</span>
                           </p>
                         </div>
                       </div>
 
                       {/* Skills Section */}
-                      <div style={{ marginBottom: "15px" }}>
-                        <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Skills</b>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      <div className="profile-skills-section">
+                        <b className="detail-label">Skills</b>
+                        <div className="skills-container">
                           {profile.skills?.map((skill, index) => (
-                            <span key={index} style={{
-                              background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                              color: "white",
-                              padding: "4px 12px",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: "500"
-                            }}>
+                            <span key={index} className="skill-tag">
                               {skill}
                             </span>
-                          )) || <span style={{ color: "#999", fontSize: "13px" }}>No skills added</span>}
+                          )) || <span className="no-skills">No skills added</span>}
                         </div>
                       </div>
 
                       {/* Achievements Section */}
-                      <div style={{ marginBottom: "20px" }}>
-                        <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Achievements</b>
-                        <div style={{ color: "#666", fontSize: "13px", lineHeight: "1.5" }}>
+                      <div className="profile-achievements-section">
+                        <b className="detail-label">Achievements</b>
+                        <div className="achievements-text">
                           {profile.achievements?.join(", ") || "No achievements added"}
                         </div>
                       </div>
 
                       {/* Description Section */}
                       {profile.description && (
-                        <div style={{ 
-                          background: "#f8f9fa",
-                          padding: "12px",
-                          borderRadius: "10px",
-                          marginBottom: "20px"
-                        }}>
-                          <b style={{ color: "#333", display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>About</b>
-                          <p style={{ 
-                            margin: "0", 
-                            color: "#666", 
-                            fontSize: "13px",
-                            lineHeight: "1.5",
-                            fontStyle: "italic"
-                          }}>
+                        <div className="profile-description-section">
+                          <b className="detail-label">About</b>
+                          <p className="profile-description">
                             {profile.description}
                           </p>
                         </div>
@@ -628,98 +350,28 @@ export default function Navbar() {
 
                       <button 
                         onClick={() => setIsEditing(true)}
-                        style={{
-                          background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                          border: "none",
-                          padding: "12px 24px",
-                          borderRadius: "20px",
-                          color: "white",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          marginTop: "10px",
-                          transition: "all 0.3s ease",
-                          width: "100%",
-                          fontSize: "14px",
-                          boxShadow: "0 2px 10px rgba(78, 205, 196, 0.3)"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = "translateY(-2px)";
-                          e.target.style.boxShadow = "0 4px 15px rgba(78, 205, 196, 0.4)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "0 2px 10px rgba(78, 205, 196, 0.3)";
-                        }}
+                        className="edit-profile-btn"
                       >
                         Edit Profile
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div className="profile-edit-form">
                       {/* Photo Upload Section */}
-                      <div style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: "15px",
-                        marginBottom: "10px"
-                      }}>
+                      <div className="photo-upload-section">
                         <div 
                           onClick={() => fileInputRef.current?.click()}
-                          style={{
-                            width: "80px",
-                            height: "80px",
-                            borderRadius: "50%",
-                            background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(45deg, #667eea, #764ba2)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontWeight: "600",
-                            fontSize: "24px",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                            border: "3px solid #4ecdc4",
-                            transition: "all 0.3s ease"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = "scale(1.05)";
-                            e.target.style.boxShadow = "0 6px 20px rgba(0,0,0,0.15)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = "scale(1)";
-                            e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
-                          }}
+                          className="profile-photo-edit"
                         >
                           {!profilePhoto && (formData.name ? formData.name.charAt(0).toUpperCase() : "S")}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ 
-                            margin: "0 0 8px 0", 
-                            color: "#333",
-                            fontWeight: "600",
-                            fontSize: "14px"
-                          }}>
+                        <div className="photo-upload-controls">
+                          <p className="photo-upload-label">
                             Profile Photo
                           </p>
                           <button 
                             onClick={() => fileInputRef.current?.click()}
-                            style={{
-                              background: "rgba(102, 126, 234, 0.1)",
-                              border: "1px dashed #667eea",
-                              padding: "8px 16px",
-                              borderRadius: "10px",
-                              color: "#667eea",
-                              fontWeight: "600",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              transition: "all 0.3s ease"
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.background = "rgba(102, 126, 234, 0.2)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.background = "rgba(102, 126, 234, 0.1)";
-                            }}
+                            className="upload-photo-btn"
                           >
                             Upload Photo
                           </button>
@@ -734,83 +386,30 @@ export default function Navbar() {
                       </div>
 
                       {/* Form Fields */}
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "1fr 1fr", 
-                        gap: "12px"
-                      }}>
-                        <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                        <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                        <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                        <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                        <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                        <input name="year" placeholder="Year" value={formData.year || ""} onChange={handleChange} 
-                          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
+                      <div className="form-grid">
+                        <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} className="form-input" />
+                        <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} className="form-input" />
+                        <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} className="form-input" />
+                        <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} className="form-input" />
+                        <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} className="form-input" />
+                        <input name="year" placeholder="Year" value={formData.year || ""} onChange={handleChange} className="form-input" />
                       </div>
                       
-                      <input name="skills" placeholder="Skills (comma separated)" value={formData.skills?.join(", ") || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="interests" placeholder="Interests (comma separated)" value={formData.interests?.join(", ") || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <input name="achievements" placeholder="Achievements (comma separated)" value={formData.achievements?.join(", ") || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", fontSize: "14px", background: "#f8f9fa" }} />
-                      <textarea name="description" placeholder="Description" value={formData.description || ""} onChange={handleChange} 
-                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e0e0e0", minHeight: "80px", fontSize: "14px", background: "#f8f9fa", resize: "vertical" }} />
+                      <input name="skills" placeholder="Skills (comma separated)" value={formData.skills?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
+                      <input name="interests" placeholder="Interests (comma separated)" value={formData.interests?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
+                      <input name="achievements" placeholder="Achievements (comma separated)" value={formData.achievements?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
+                      <textarea name="description" placeholder="Description" value={formData.description || ""} onChange={handleChange} className="form-textarea" />
                       
-                      <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                      <div className="form-buttons">
                         <button 
                           onClick={handleSave}
-                          style={{
-                            background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                            border: "none",
-                            padding: "12px 24px",
-                            borderRadius: "20px",
-                            color: "white",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            flex: 1,
-                            transition: "all 0.3s ease",
-                            fontSize: "14px",
-                            boxShadow: "0 2px 10px rgba(78, 205, 196, 0.3)"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = "translateY(-2px)";
-                            e.target.style.boxShadow = "0 4px 15px rgba(78, 205, 196, 0.4)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 2px 10px rgba(78, 205, 196, 0.3)";
-                          }}
+                          className="save-changes-btn"
                         >
                           Save Changes
                         </button>
                         <button 
                           onClick={() => setIsEditing(false)}
-                          style={{
-                            background: "rgba(255,255,255,0.1)",
-                            border: "1px solid #e0e0e0",
-                            padding: "12px 24px",
-                            borderRadius: "20px",
-                            color: "#666",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            flex: 1,
-                            transition: "all 0.3s ease",
-                            fontSize: "14px"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.background = "#f8f9fa";
-                            e.target.style.transform = "translateY(-2px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.background = "rgba(255,255,255,0.1)";
-                            e.target.style.transform = "translateY(0)";
-                          }}
+                          className="cancel-btn"
                         >
                           Cancel
                         </button>
@@ -821,54 +420,15 @@ export default function Navbar() {
               )}
             </div>
           ) : role === "club" && token ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="navbar-club-section">
               <Link to="/clubs">
-                <button
-                  style={{
-                    background: "linear-gradient(45deg, #667eea, #764ba2)",
-                    border: "none",
-                    padding: "10px 20px",
-                    borderRadius: "20px",
-                    color: "white",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    fontSize: "14px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-                  }}
-                >
+                <button className="navbar-club-dashboard-btn">
                   Club Dashboard
                 </button>
               </Link>
               <button 
                 onClick={handleLogout}
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  padding: "10px 20px",
-                  borderRadius: "20px",
-                  color: "white",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  fontSize: "14px"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = "rgba(255,255,255,0.25)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = "rgba(255,255,255,0.15)";
-                  e.target.style.transform = "translateY(0)";
-                }}
+                className="navbar-logout-btn"
               >
                 Logout
               </button>
@@ -877,130 +437,30 @@ export default function Navbar() {
             <div style={{ position: "relative" }} ref={loginDropdownRef}>
               <button 
                 onClick={() => setShowLoginDropdown(!showLoginDropdown)}
-                style={{
-                  background: "linear-gradient(45deg, #ff6b6b, #feca57)",
-                  border: "none",
-                  padding: "10px 24px",
-                  borderRadius: "20px",
-                  color: "white",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                  fontSize: "14px"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = "translateY(-2px)";
-                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = "translateY(0)";
-                  e.target.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
-                }}
+                className="navbar-login-btn"
               >
                 Login
               </button>
 
               {showLoginDropdown && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50px",
-                    right: "0",
-                    background: "white",
-                    border: "none",
-                    borderRadius: "16px",
-                    padding: "16px",
-                    width: "200px",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-                    zIndex: 1000,
-                    animation: "slideDown 0.3s ease"
-                  }}
-                >
-                  <h4 style={{ 
-                    margin: "0 0 12px 0", 
-                    color: "#333", 
-                    fontSize: "16px",
-                    fontWeight: "700",
-                    textAlign: "center"
-                  }}>
+                <div className="login-dropdown">
+                  <h4 className="dropdown-title">
                     Choose Login
                   </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div className="dropdown-buttons">
                     <Link to="/admin/login">
-                      <button
-                        style={{
-                          background: "linear-gradient(45deg, #667eea, #764ba2)",
-                          border: "none",
-                          padding: "12px 16px",
-                          borderRadius: "12px",
-                          color: "white",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          width: "100%",
-                          fontSize: "14px"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = "translateY(-2px)";
-                          e.target.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "none";
-                        }}
-                      >
+                      <button className="admin-login-btn">
                         Admin Login
                       </button>
                     </Link>
                     <Link to="/club/login">
-                      <button
-                        style={{
-                          background: "linear-gradient(45deg, #ff9a9e, #fad0c4)",
-                          border: "none",
-                          padding: "12px 16px",
-                          borderRadius: "12px",
-                          color: "#333",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          width: "100%",
-                          fontSize: "14px"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = "translateY(-2px)";
-                          e.target.style.boxShadow = "0 4px 15px rgba(255, 154, 158, 0.4)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "none";
-                        }}
-                      >
+                      <button className="club-login-btn">
                         Club Login
                       </button>
                     </Link>
                     <button
                       onClick={() => setShowStudentLogin(true)}
-                      style={{
-                        background: "linear-gradient(45deg, #4ecdc4, #44a08d)",
-                        border: "none",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        color: "white",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        width: "100%",
-                        fontSize: "14px"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = "translateY(-2px)";
-                        e.target.style.boxShadow = "0 4px 15px rgba(78, 205, 196, 0.4)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = "translateY(0)";
-                        e.target.style.boxShadow = "none";
-                      }}
+                      className="student-login-btn"
                     >
                       Student Login
                     </button>
@@ -1014,51 +474,11 @@ export default function Navbar() {
 
       {/* Student Login Modal */}
       {showStudentLogin && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2000,
-          backdropFilter: "blur(5px)"
-        }}>
-          <div style={{
-            background: "white",
-            borderRadius: "20px",
-            padding: "30px",
-            maxWidth: "500px",
-            width: "90%",
-            maxHeight: "90vh",
-            overflow: "auto",
-            boxShadow: "0 30px 60px rgba(0,0,0,0.3)",
-            position: "relative"
-          }}>
+        <div className="modal-overlay">
+          <div className="modal-container">
             <button 
               onClick={() => setShowStudentLogin(false)}
-              style={{
-                position: "absolute",
-                top: "15px",
-                right: "15px",
-                background: "none",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                color: "#999",
-                transition: "all 0.3s ease"
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.color = "#333";
-                e.target.style.transform = "rotate(90deg)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.color = "#999";
-                e.target.style.transform = "rotate(0deg)";
-              }}
+              className="modal-close-btn"
             >
               ×
             </button>
@@ -1078,6 +498,740 @@ export default function Navbar() {
               opacity: 1;
               transform: translateY(0);
             }
+          }
+
+          .navbar-container {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+          }
+
+          .navbar-logo-section {
+            display: flex;
+            align-items: center;
+          }
+
+          .navbar-logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+          }
+
+          .navbar-logo-text {
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+          }
+
+          .navbar-brand-text {
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            letter-spacing: -0.5px;
+          }
+
+          .navbar-links-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 4px;
+          }
+
+          .navbar-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: transparent;
+          }
+
+          .navbar-link-active {
+            background: rgba(255,255,255,0.2);
+          }
+
+          .navbar-auth-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .navbar-create-club-btn {
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+          }
+
+          .navbar-create-club-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+          }
+
+          .navbar-create-club-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+
+          .navbar-admin-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .navbar-admin-dashboard-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+          }
+
+          .navbar-admin-dashboard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          }
+
+          .navbar-admin-dashboard-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+
+          .navbar-logout-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+          }
+
+          .navbar-logout-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+          }
+
+          .navbar-logout-btn:not(:hover) {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(0);
+          }
+
+          .navbar-student-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .navbar-profile-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+          }
+
+          .navbar-profile-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          }
+
+          .navbar-profile-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+
+          .navbar-club-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .navbar-club-dashboard-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+          }
+
+          .navbar-club-dashboard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          }
+
+          .navbar-club-dashboard-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+
+          .navbar-login-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+          }
+
+          .navbar-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          }
+
+          .navbar-login-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+
+          .login-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            width: 200px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideDown 0.3s ease;
+          }
+
+          .dropdown-title {
+            margin: 0 0 12px 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+          }
+
+          .dropdown-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .admin-login-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 14px;
+          }
+
+          .admin-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          }
+
+          .admin-login-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: none;
+          }
+
+          .club-login-btn {
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 14px;
+          }
+
+          .club-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+          }
+
+          .club-login-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: none;
+          }
+
+          .student-login-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 14px;
+          }
+
+          .student-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+          }
+
+          .student-login-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: none;
+          }
+
+          .profile-popup {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border: none;
+            border-radius: 16px;
+            padding: 24px;
+            width: 420px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideDown 0.3s ease;
+          }
+
+          .profile-popup-title {
+            margin: 0 0 20px 0;
+            color: #333;
+            border-bottom: 2px solid #4ecdc4;
+            padding-bottom: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .profile-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+          }
+
+          .profile-view {
+            line-height: 1.6;
+            font-size: 14px;
+            color: #555;
+          }
+
+          .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+          }
+
+          .profile-photo-display {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #4ecdc4;
+          }
+
+          .profile-basic-info {
+            flex: 1;
+          }
+
+          .profile-name {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 18px;
+            font-weight: 700;
+          }
+
+          .profile-usn {
+            margin: 0 0 6px 0;
+            color: #666;
+            font-size: 14px;
+          }
+
+          .profile-year-dept {
+            margin: 0 0 6px 0;
+            color: #666;
+            font-size: 14px;
+          }
+
+          .profile-email {
+            margin: 0;
+            color: #4ecdc4;
+            font-size: 13px;
+            font-weight: 600;
+          }
+
+          .profile-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+          }
+
+          .profile-detail-item {
+            margin: 0 0 8px 0;
+          }
+
+          .detail-label {
+            color: #333;
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .detail-value {
+            color: #666;
+          }
+
+          .profile-skills-section {
+            margin-bottom: 15px;
+          }
+
+          .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+
+          .skill-tag {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+          }
+
+          .no-skills {
+            color: #999;
+            font-size: 13px;
+          }
+
+          .profile-achievements-section {
+            margin-bottom: 20px;
+          }
+
+          .achievements-text {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .profile-description-section {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+          }
+
+          .profile-description {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+            font-style: italic;
+          }
+
+          .edit-profile-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.3);
+          }
+
+          .edit-profile-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+          }
+
+          .edit-profile-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.3);
+          }
+
+          .profile-edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .photo-upload-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+          }
+
+          .profile-photo-edit {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #4ecdc4;
+            transition: all 0.3s ease;
+          }
+
+          .profile-photo-edit:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+          }
+
+          .profile-photo-edit:not(:hover) {
+            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+          }
+
+          .photo-upload-controls {
+            flex: 1;
+          }
+
+          .photo-upload-label {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+          }
+
+          .upload-photo-btn {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px dashed #667eea;
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+          }
+
+          .upload-photo-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+          }
+
+          .upload-photo-btn:not(:hover) {
+            background: rgba(102, 126, 234, 0.1);
+          }
+
+          .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+
+          .form-input {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            font-size: 14px;
+            background: #f8f9fa;
+          }
+
+          .form-input-full {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            font-size: 14px;
+            background: #f8f9fa;
+          }
+
+          .form-textarea {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            font-size: 14px;
+            background: #f8f9fa;
+            resize: vertical;
+            min-height: 80px;
+          }
+
+          .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+          }
+
+          .save-changes-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 2;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.3);
+          }
+
+          .save-changes-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+          }
+
+          .save-changes-btn:not(:hover) {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.3);
+          }
+
+          .cancel-btn {
+            background: rgba(108, 117, 125, 0.1);
+            border: 1px solid #6c757d;
+            padding: 12px 24px;
+            border-radius: 20px;
+            color: #6c757d;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            font-size: 14px;
+          }
+
+          .cancel-btn:hover {
+            background: rgba(108, 117, 125, 0.2);
+          }
+
+          .cancel-btn:not(:hover) {
+            background: rgba(108, 117, 125, 0.1);
+          }
+
+          .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+          }
+
+          .modal-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+          }
+
+          .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(108, 117, 125, 0.1);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: #6c757d;
+            transition: all 0.3s ease;
+          }
+
+          .modal-close-btn:hover {
+            background: rgba(108, 117, 125, 0.2);
+            transform: rotate(90deg);
+          }
+
+          .modal-close-btn:not(:hover) {
+            background: rgba(108, 117, 125, 0.1);
+            transform: rotate(0deg);
           }
         `}
       </style>

@@ -4,7 +4,7 @@ import API from "../api";
 import { Link } from "react-router-dom";
 import "./Home.css";
 
-// Chatbot Component (moved from Chatbot.js and integrated)
+// Chatbot Component (unchanged as requested)
 function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -197,6 +197,7 @@ export default function Home() {
   const [profile, setProfile] = useState(null);
   const [clubs, setClubs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const threeContainerRef = useRef(null);
   const role = localStorage.getItem("role");
 
@@ -207,6 +208,21 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("selectedClub", selectedClub);
   }, [selectedClub]);
+
+  // High-quality images for hero section
+  const heroImages = [
+    "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2128&q=80",
+    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    "https://plus.unsplash.com/premium_photo-1661877737564-3dfd7282efcb?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1200"
+  ];
+
+  // Auto-rotate hero images
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   // ------------------- THREE.JS BACKGROUND -------------------
   useEffect(() => {
@@ -402,8 +418,19 @@ export default function Home() {
       {/* Chatbot Component */}
       <Chatbot />
       
-      {/* Hero Section */}
+      {/* Hero Section with rotating images */}
       <section className="hero-section">
+        <div className="hero-slideshow">
+          {heroImages.map((image, index) => (
+            <div 
+              key={index}
+              className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
+              style={{ backgroundImage: `url(${image})` }}
+            ></div>
+          ))}
+          <div className="hero-overlay"></div>
+        </div>
+        
         <div className="hero-content">
           <div className="hero-badge">Campus Life Platform</div>
           <h1>Welcome to <span className="brand">CampusBuzz</span></h1>
@@ -427,28 +454,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="hero-visual">
-          <div className="floating-card card-1">
-            <div className="card-icon">🎉</div>
-            <p>Events</p>
-          </div>
-          <div className="floating-card card-2">
-            <div className="card-icon">📝</div>
-            <p>Blogs</p>
-          </div>
-          <div className="floating-card card-3">
-            <div className="card-icon">👥</div>
-            <p>Clubs</p>
-          </div>
-          <div className="hero-image">
-            <img src="images/reporterBoy.png" alt="Campus Events Icon" />
-          </div>
-        </div>
       </section>
 
-      <div className="information-section" id="information">
+      {/* Information Section */}
+      <section className="information-section" id="information">
+        <div className="section-header">
+          <h2>Why Choose CampusBuzz?</h2>
+          <div className="underline"></div>
+        </div>
+        
         <div className="about-grid">
-          {/* Existing cards remain unchanged */}
           <div className="about-card">
             <div className="about-icon">📅</div>
             <h3>Events</h3>
@@ -461,233 +476,190 @@ export default function Home() {
             <p>Discover and join student clubs that match your interests, from technical societies to hobby groups, fostering collaboration and personal growth.</p>
           </div>
           
-          {/* New enhanced content cards */}
           <div className="about-card">
             <div className="about-icon">🚀</div>
             <h3>Student Growth</h3>
-            <p>Our platform is designed to foster holistic development by providing opportunities for skill enhancement, leadership development, and networking with peers and professionals across various domains.</p>
+            <p>Our platform is designed to foster holistic development by providing opportunities for skill enhancement, leadership development, and networking.</p>
           </div>
           
           <div className="about-card">
             <div className="about-icon">🤝</div>
             <h3>Collaboration Hub</h3>
-            <p>CampusConnect serves as a central hub where students can find collaborators for projects, form teams for competitions, and connect with like-minded individuals who share similar academic and extracurricular interests.</p>
+            <p>CampusBuzz serves as a central hub where students can find collaborators for projects, form teams for competitions, and connect with like-minded individuals.</p>
           </div>
           
           <div className="about-card">
             <div className="about-icon">💼</div>
             <h3>Career Preparation</h3>
-            <p>Participate in workshops, hackathons, and industry interactions that build your resume and prepare you for future career opportunities while still in college.</p>
+            <p>Participate in workshops, hackathons, and industry interactions that build your resume and prepare you for future career opportunities.</p>
           </div>
           
           <div className="about-card">
             <div className="about-icon">🌐</div>
             <h3>Campus Community</h3>
-            <p>Join a vibrant digital campus community where you can stay updated with all campus activities, share achievements, and contribute to making your college experience more engaging and memorable.</p>
+            <p>Join a vibrant digital campus community where you can stay updated with all campus activities, share achievements, and contribute to making your college experience more engaging.</p>
           </div>
         </div>
-        
-        {/* Detailed Event Information Section */}
-        <div className="event-details">
-          <h2>Explore Campus Events & Activities</h2>
-          <div className="event-categories">
-            <div className="event-category">
-              <h3>💻 Hackathons & Coding Events</h3>
-              <ul>
-                <li><strong>24-Hour Codeathons:</strong> Intensive coding competitions where teams solve real-world problems</li>
-                <li><strong>Algorithm Challenges:</strong> Weekly coding contests to sharpen problem-solving skills</li>
-                <li><strong>Web Development Marathons:</strong> Build complete web applications in limited timeframes</li>
-                <li><strong>AI/ML Competitions:</strong> Work on cutting-edge artificial intelligence projects</li>
-                <li><strong>App Development Sprints:</strong> Create mobile applications for specific use cases</li>
-              </ul>
-              <p><strong>Benefits:</strong> Enhance technical skills, build portfolio projects, network with tech companies, win prizes and recognition.</p>
-            </div>
-            
-            <div className="event-category">
-              <h3>🎭 Cultural & Arts Events</h3>
-              <ul>
-                <li><strong>Dance Competitions:</strong> Various styles including contemporary, hip-hop, classical, and fusion</li>
-                <li><strong>Music Festivals:</strong> Band performances, solo singing, instrumental competitions</li>
-                <li><strong>Drama & Theater:</strong> Stage plays, street plays, improvisation workshops</li>
-                <li><strong>Art Exhibitions:</strong> Showcasing paintings, sculptures, digital art, and photography</li>
-                <li><strong>Literary Events:</strong> Poetry slams, debate competitions, creative writing workshops</li>
-              </ul>
-              <p><strong>Benefits:</strong> Express creativity, relieve academic stress, discover hidden talents, build confidence in performance.</p>
-            </div>
-            
-            <div className="event-category">
-              <h3>⚽ Sports & Fitness Events</h3>
-              <ul>
-                <li><strong>Inter-College Tournaments:</strong> Cricket, football, basketball, volleyball championships</li>
-                <li><strong>Individual Sports:</strong> Badminton, table tennis, chess, athletics competitions</li>
-                <li><strong>Adventure Sports:</strong> Trekking, rock climbing, marathon runs</li>
-                <li><strong>Fitness Challenges:</strong> Yoga sessions, zumba workshops, fitness bootcamps</li>
-                <li><strong>E-Sports:</strong> Gaming tournaments featuring popular competitive video games</li>
-              </ul>
-              <p><strong>Benefits:</strong> Maintain physical health, develop teamwork skills, learn sportsmanship, compete at various levels.</p>
-            </div>
-            
-            <div className="event-category">
-              <h3>🔬 Academic & Technical Events</h3>
-              <ul>
-                <li><strong>Technical Workshops:</strong> Hands-on sessions on emerging technologies</li>
-                <li><strong>Research Symposiums:</strong> Present and discuss academic research projects</li>
-                <li><strong>Guest Lectures:</strong> Industry experts and alumni sharing insights</li>
-                <li><strong>Project Exhibitions:</strong> Showcase innovative student projects</li>
-                <li><strong>Case Study Competitions:</strong> Solve real business and technical challenges</li>
-              </ul>
-              <p><strong>Benefits:</strong> Deepen subject knowledge, gain practical skills, interact with experts, enhance academic credentials.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Upcoming Events */}
       <section className="section events-section">
-        <div className="section-header">
-          <h2>Upcoming Events</h2>
-          <div className="underline"></div>
-        </div>
-        {safeEvents.length > 0 ? (
-          <div className="events-grid">
-            {safeEvents.map((e) => (
-              <div key={e.id} className="event-card">
-                <div className="event-image">
-                  <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Event" />
-                  <div className="event-date">
-                    <span className="date-day">{new Date(e.date).getDate()}</span>
-                    <span className="date-month">{new Date(e.date).toLocaleString('default', { month: 'short' })}</span>
+        <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80')"}}></div>
+        <div className="section-overlay"></div>
+        <div className="section-content">
+          <div className="section-header">
+            <h2>Events</h2>
+            <div className="underline"></div>
+          </div>
+          {safeEvents.length > 0 ? (
+            <div className="events-grid">
+              {safeEvents.map((e) => (
+                <div key={e.id} className="event-card">
+                  <div className="event-image">
+                    <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Event" />
+                    <div className="event-date">
+                      <span className="date-day">{new Date(e.date).getDate()}</span>
+                      <span className="date-month">{new Date(e.date).toLocaleString('default', { month: 'short' })}</span>
+                    </div>
+                  </div>
+                  <div className="event-content">
+                    <h3>{e.title}</h3>
+                    <p>{e.description}</p>
+                    <div className="event-details">
+                      <span className="event-venue">📍 {e.venue}</span>
+                    </div>
+                    <button className="btn-primary" onClick={() => registerEvent(e.id)}>Register Now</button>
                   </div>
                 </div>
-                <div className="event-content">
-                  <h3>{e.title}</h3>
-                  <p>{e.description}</p>
-                  <div className="event-details">
-                    <span className="event-venue">📍 {e.venue}</span>
-                  </div>
-                  <button className="btn-primary" onClick={() => registerEvent(e.id)}>Register Now</button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">🎉</div>
+              <h3>No events available</h3>
+              <p>Check back later for upcoming events</p>
+            </div>
+          )}
+          <div className="section-footer">
+            <Link to="/events" className="view-all-link">View All Events →</Link>
           </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-icon">🎉</div>
-            <h3>No events available</h3>
-            <p>Check back later for upcoming events</p>
-          </div>
-        )}
-        <div className="section-footer">
-          <Link to="/events" className="view-all-link">View All Events →</Link>
         </div>
       </section>
 
       {/* Latest Blogs */}
       <section className="section blogs-section">
-        <div className="section-header">
-          <h2>Latest Blogs & Announcements</h2>
-          <div className="underline"></div>
-        </div>
-        {safeBlogs.length > 0 ? (
-          <div className="blogs-grid">
-            {safeBlogs.map((blog) => (
-              <div key={blog._id} className="blog-card">
-                <div className="blog-image">
-                  {blog.image ? (
-                    <img src={blog.image} alt="Blog" />
-                  ) : (
-                    <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Blog" />
-                  )}
-                </div>
-                <div className="blog-content">
-                  <h3>{blog.title}</h3>
-                  <p>{blog.content?.substring(0, 100)}...</p>
-                  <Link to={`/blogs`} className="read-more">Read More →</Link>
-                </div>
-              </div>
-            ))}
+        <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80')"}}></div>
+        <div className="section-overlay"></div>
+        <div className="section-content">
+          <div className="section-header">
+            <h2>Latest Blogs & Announcements</h2>
+            <div className="underline"></div>
           </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-icon">📝</div>
-            <h3>No blogs available</h3>
-            <p>Check back later for new blogs</p>
+          {safeBlogs.length > 0 ? (
+            <div className="blogs-grid">
+              {safeBlogs.map((blog) => (
+                <div key={blog._id} className="blog-card">
+                  <div className="blog-image">
+                    {blog.image ? (
+                      <img src={blog.image} alt="Blog" />
+                    ) : (
+                      <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Blog" />
+                    )}
+                  </div>
+                  <div className="blog-content">
+                    <h3>{blog.title}</h3>
+                    <p>{blog.content?.substring(0, 100)}...</p>
+                    <Link to={`/blogs`} className="read-more">Read More →</Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <h3>No blogs available</h3>
+              <p>Check back later for new blogs</p>
+            </div>
+          )}
+          <div className="section-footer">
+            <Link to="/blogs" className="view-all-link">View All Blogs →</Link>
           </div>
-        )}
-        <div className="section-footer">
-          <Link to="/blogs" className="view-all-link">View All Blogs →</Link>
         </div>
       </section>
 
-      {/* Join Club Section */}
+{/* Join Club Section */} 
       <section className="section clubs-section">
-        <div className="section-header">
-          <h2>Join a Club</h2>
-          <div className="underline"></div>
-        </div>
-        
-        <div className="clubs-grid">
-          {safeClubs.length > 0 ? (
-            safeClubs.map((club) => (
-              <div key={club.id} className="club-poster-card">
-                {/* Club Image */}
-                <div className="club-image-container">
-                  {club.image ? (
-                    <img 
-                      src={club.image} 
-                      alt={club.name} 
-                      className="club-image"
-                    />
-                  ) : (
-                    <div className="club-image-placeholder">
-                      <span>No Image</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Club Details */}
-                <div className="club-details">
-                  <h3 className="club-name">{club.name}</h3>
+        <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')"}}></div>
+        <div className="section-overlay"></div>
+        <div className="section-content">
+          <div className="section-header">
+            <h2>Join a Club</h2>
+            <div className="underline"></div>
+          </div>
+          
+          <div className="clubs-grid">
+            {safeClubs.length > 0 ? (
+              safeClubs.map((club) => (
+                <div key={club.id} className="club-poster-card">
+                  {/* Club Image */}
+                  <div className="club-image-container">
+                    {club.image_base64 ? (
+                      <img 
+                        src={`data:image/jpeg;base64,${club.image_base64}`} 
+                        alt={club.name} 
+                        className="club-image"
+                      />
+                    ) : (
+                      <div className="club-image-placeholder">
+                        <span>No Image</span>
+                      </div>
+                    )}
+                  </div>
                   
-                  {club.email && (
-                    <div className="club-email">
-                      <span className="email-label">Email: </span>
-                      <a href={`mailto:${club.email}`} className="email-link">
-                        {club.email}
-                      </a>
-                    </div>
-                  )}
+                  {/* Club Details */}
+                  <div className="club-details">
+                    <h3 className="club-name">{club.name}</h3>
+                    
+                    {club.email && (
+                      <div className="club-email">
+                        <span className="email-label">Email: </span>
+                        <a href={`mailto:${club.email}`} className="email-link">
+                          {club.email}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {club.description && (
+                      <div className="club-description">
+                        <p>{club.description}</p>
+                      </div>
+                    )}
+                    
+                    {club.purpose && (
+                      <div className="club-purpose">
+                        <h4>Purpose</h4>
+                        <p>{club.purpose}</p>
+                      </div>
+                    )}
+                  </div>
                   
-                  {club.description && (
-                    <div className="club-description">
-                      <p>{club.description}</p>
-                    </div>
-                  )}
-                  
-                  {club.purpose && (
-                    <div className="club-purpose">
-                      <h4>Purpose</h4>
-                      <p>{club.purpose}</p>
-                    </div>
-                  )}
+                  {/* Join Button */}
+                  <div className="club-actions">
+                    <button
+                      className="btn-primary join-btn"
+                      onClick={() => applyJoinClub(club.id)}
+                    >
+                      Join Club
+                    </button>
+                  </div>
                 </div>
-                
-                {/* Join Button */}
-                <div className="club-actions">
-                  <button
-                    className="btn-primary join-btn"
-                    onClick={() => applyJoinClub(club.id)}
-                  >
-                    Join Club
-                  </button>
-                </div>
+              ))
+            ) : (
+              <div className="no-clubs-message">
+                <p>No clubs available to join at the moment.</p>
               </div>
-            ))
-          ) : (
-            <div className="no-clubs-message">
-              <p>No clubs available to join at the moment.</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
 
@@ -721,30 +693,34 @@ export default function Home() {
 
       {/* Contact Section */}
       <section id="contact" className="section contact-section">
-        <div className="section-header">
-          <h2>Contact Us</h2>
-          <div className="underline"></div>
-        </div>
-        <div className="contact-info">
-          <div className="contact-item">
-            <div className="contact-icon">📍</div>
-            <div className="contact-details">
-              <h4>Address</h4>
-              <p>ABC University, City, State</p>
-            </div>
+        <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80')"}}></div>
+        <div className="section-overlay"></div>
+        <div className="section-content">
+          <div className="section-header">
+            <h2>Contact Us</h2>
+            <div className="underline"></div>
           </div>
-          <div className="contact-item">
-            <div className="contact-icon">📞</div>
-            <div className="contact-details">
-              <h4>Phone</h4>
-              <p>+91 9876543210</p>
+          <div className="contact-info">
+            <div className="contact-item">
+              <div className="contact-icon">📍</div>
+              <div className="contact-details">
+                <h4>Address</h4>
+                <p>ABC University, City, State</p>
+              </div>
             </div>
-          </div>
-          <div className="contact-item">
-            <div className="contact-icon">📧</div>
-            <div className="contact-details">
-              <h4>Email</h4>
-              <p>support@campusbuzz.com</p>
+            <div className="contact-item">
+              <div className="contact-icon">📞</div>
+              <div className="contact-details">
+                <h4>Phone</h4>
+                <p>+91 9876543210</p>
+              </div>
+            </div>
+            <div className="contact-item">
+              <div className="contact-icon">📧</div>
+              <div className="contact-details">
+                <h4>Email</h4>
+                <p>support@campusbuzz.com</p>
+              </div>
             </div>
           </div>
         </div>

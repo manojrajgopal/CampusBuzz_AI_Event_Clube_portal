@@ -224,7 +224,15 @@ export default function Blogs() {
       const imageUrl = blog.mediaType === "file" ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split('/').pop()}` : mediaUrl;
       return (
         <div className="blog-media">
-          <img src={imageUrl} alt={blog.title} className="blog-image" />
+          <img 
+            src={imageUrl} 
+            alt={blog.title} 
+            className="blog-image"
+            onError={(e) => {
+              // If image fails to load, show default image
+              e.target.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80";
+            }}
+          />
         </div>
       );
     }
@@ -232,214 +240,283 @@ export default function Blogs() {
 
   return (
     <div className="blogs-page">
-      {/* Hero Section */}
-      <section className="section blogs-hero">
-        <div className="section-header">
-          <h2>Blogs & Announcements</h2>
-          <div className="underline"></div>
-          <p>Stay updated with the latest campus news, events, and insights</p>
+      {/* Background with high-quality image */}
+      <div className="page-background">
+        <div className="background-image"></div>
+        <div className="background-overlay"></div>
+        <div className="floating-particles">
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
         </div>
-        
-        {(role === "admin" || role === "club") && (
-          <div className="hero-actions">
-            <button 
-              className={`btn-primary ${showForm ? 'btn-cancel' : ''}`}
-              onClick={() => setShowForm(!showForm)}
-            >
-              {showForm ? "Cancel" : "Create Blog"}
-            </button>
+      </div>
+
+      {/* Header Section */}
+      <header className="page-header">
+        <div className="header-content">
+          <div className="header-badge">Campus Insights</div>
+          <h1 className="page-title">
+            Blogs & Announcements
+          </h1>
+          <p className="page-subtitle">
+            Stay updated with the latest campus news, events, and student insights
+          </p>
+          <div className="header-stats">
+            <div className="stat">
+              <span className="stat-number">{blogs.length}+</span>
+              <span className="stat-label">Blog Posts</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">5K+</span>
+              <span className="stat-label">Monthly Readers</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">50+</span>
+              <span className="stat-label">Active Writers</span>
+            </div>
           </div>
-        )}
-      </section>
+          
+          {(role === "admin" || role === "club") && (
+            <div className="header-actions">
+              <button 
+                className={`btn-primary ${showForm ? 'btn-cancel' : ''}`}
+                onClick={() => setShowForm(!showForm)}
+              >
+                {showForm ? "Cancel" : "Create Blog Post"}
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
 
-      {/* Create/Edit Blog Form */}
-      {showForm && (role === "admin" || role === "club") && (
-        <section className="section blog-form-section">
-          <div className="blog-form-container">
-            <h3>{editingBlog ? "Edit Blog" : "Create New Blog"}</h3>
-            
-            {error && <div className="error-message">{error}</div>}
-            
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Title *</label>
-                <input
-                  name="title"
-                  placeholder="Enter blog title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="form-input"
-                />
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Create/Edit Blog Form */}
+        {showForm && (role === "admin" || role === "club") && (
+          <section className="blog-form-section">
+            <div className="blog-form-container">
+              <div className="form-header">
+                <h3>{editingBlog ? "Edit Blog Post" : "Create New Blog"}</h3>
+                <p>Share your insights and announcements with the campus community</p>
               </div>
-
-              <div className="form-group full-width">
-                <label>Content *</label>
-                <textarea
-                  name="content"
-                  placeholder="Write your blog content here..."
-                  value={form.content}
-                  onChange={handleChange}
-                  rows="6"
-                  className="form-textarea"
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Image Type</label>
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="imageType"
-                      value="url"
-                      checked={form.imageType === "url"}
-                      onChange={handleChange}
-                    />
-                    Use URL
-                  </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="imageType"
-                      value="file"
-                      checked={form.imageType === "file"}
-                      onChange={handleChange}
-                    />
-                    Upload File
-                  </label>
-                </div>
-              </div>
-
-              {form.imageType === "url" ? (
-                <div className="form-group full-width">
-                  <label>Image URL</label>
+              
+              {error && <div className="error-message">{error}</div>}
+              
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Title *</label>
                   <input
-                    name="image"
-                    placeholder="https://example.com/image.jpg"
-                    value={form.image}
+                    name="title"
+                    placeholder="Enter blog title"
+                    value={form.title}
                     onChange={handleChange}
                     className="form-input"
                   />
                 </div>
-              ) : (
+
                 <div className="form-group full-width">
-                  <label>Upload File (Max 5MB)</label>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={handleFileChange}
-                    className="form-input"
+                  <label>Content *</label>
+                  <textarea
+                    name="content"
+                    placeholder="Write your blog content here..."
+                    value={form.content}
+                    onChange={handleChange}
+                    rows="6"
+                    className="form-textarea"
                   />
-                  {file && (
-                    <div className="file-name">
-                      Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </div>
-                  )}
-                  <small style={{color: '#718096', marginTop: '5px'}}>
-                    Supported: JPEG, PNG, GIF, MP4, WebM, OGG
-                  </small>
                 </div>
-              )}
-            </div>
 
-            <div className="form-actions">
-              <button 
-                onClick={handleSubmit} 
-                disabled={loading}
-                className="btn-submit"
-              >
-                {loading ? "Saving..." : (editingBlog ? "Update Blog" : "Create Blog")}
-              </button>
-              <button onClick={resetForm} className="btn-secondary">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Loading State */}
-      {loading && !showForm && (
-        <section className="section">
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <h3>Loading blogs...</h3>
-          </div>
-        </section>
-      )}
-
-      {/* Error State */}
-      {error && !showForm && (
-        <section className="section">
-          <div className="error-state">
-            <div className="error-icon">⚠️</div>
-            <h3>{error}</h3>
-          </div>
-        </section>
-      )}
-
-      {/* Blog List */}
-      <section className="section blogs-section">
-        {blogs.length === 0 && !loading ? (
-          <div className="empty-state">
-            <div className="empty-icon">📝</div>
-            <h3>No blogs available</h3>
-            <p>{role === "admin" || role === "club" ? "Create one to get started!" : "Check back later for new blogs!"}</p>
-          </div>
-        ) : (
-          <div className="blogs-grid">
-            {blogs.map((blog) => {
-              const blogId = blog._id || blog.id;
-              return (
-                <div key={blogId} className="blog-card">
-                  {/* Blog Image */}
-                  {renderImage(blog)}
-                  
-                  <div className="blog-content">
-                    <div className="blog-header">
-                      <h3 className="blog-title">{blog.title}</h3>
-                      {(role === "admin" || role === "club") && (
-                        <div className="blog-actions">
-                          <button 
-                            onClick={() => handleEdit(blog)}
-                            className="btn-edit"
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => deleteBlog(blogId)}
-                            className="btn-delete"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <p className="blog-excerpt">
-                      {blog.content?.substring(0, 150)}
-                      {blog.content?.length > 150 ? "..." : ""}
-                    </p>
-                    
-                    <div className="blog-meta">
-                      {blog.author && <span className="blog-author">By {blog.author}</span>}
-                      {blog.created_at && (
-                        <span className="blog-date">
-                          {new Date(blog.created_at).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="blog-footer">
-                      <button className="read-more">Read Full Story →</button>
-                    </div>
+                <div className="form-group full-width">
+                  <label>Media Type</label>
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="imageType"
+                        value="url"
+                        checked={form.imageType === "url"}
+                        onChange={handleChange}
+                      />
+                      Use URL
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="imageType"
+                        value="file"
+                        checked={form.imageType === "file"}
+                        onChange={handleChange}
+                      />
+                      Upload File
+                    </label>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {form.imageType === "url" ? (
+                  <div className="form-group full-width">
+                    <label>Media URL</label>
+                    <input
+                      name="image"
+                      placeholder="https://example.com/image.jpg"
+                      value={form.image}
+                      onChange={handleChange}
+                      className="form-input"
+                    />
+                  </div>
+                ) : (
+                  <div className="form-group full-width">
+                    <label>Upload File (Max 5MB)</label>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleFileChange}
+                      className="form-input"
+                    />
+                    {file && (
+                      <div className="file-name">
+                        Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </div>
+                    )}
+                    <small className="file-hint">
+                      Supported: JPEG, PNG, GIF, MP4, WebM, OGG
+                    </small>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                  className="btn-submit"
+                >
+                  {loading ? "Saving..." : (editingBlog ? "Update Blog" : "Create Blog")}
+                </button>
+                <button onClick={resetForm} className="btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </section>
         )}
-      </section>
+
+        {/* Loading State */}
+        {loading && !showForm && (
+          <section className="loading-section">
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <h3>Loading blogs...</h3>
+              <p>Fetching the latest campus insights</p>
+            </div>
+          </section>
+        )}
+
+        {/* Error State */}
+        {error && !showForm && (
+          <section className="error-section">
+            <div className="error-container">
+              <div className="error-icon">⚠️</div>
+              <h3>{error}</h3>
+              <button onClick={fetchBlogs} className="btn-primary">
+                Try Again
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Blog List */}
+        <section className="blogs-section">
+          {blogs.length === 0 && !loading ? (
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <h3>No blogs available</h3>
+              <p>{role === "admin" || role === "club" ? "Create one to get started!" : "Check back later for new blogs!"}</p>
+              {(role === "admin" || role === "club") && !showForm && (
+                <button 
+                  className="btn-primary"
+                  onClick={() => setShowForm(true)}
+                >
+                  Create First Blog
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="blogs-grid">
+              {blogs.map((blog, index) => {
+                const blogId = blog._id || blog.id;
+                return (
+                  <div key={blogId} className="blog-card" style={{ animationDelay: `${index * 0.1}s` }}>
+                    {/* Blog Image */}
+                    {renderImage(blog)}
+                    
+                    <div className="blog-content">
+                      <div className="blog-header">
+                        <h3 className="blog-title">{blog.title}</h3>
+                        {(role === "admin" || role === "club") && (
+                          <div className="blog-actions">
+                            <button 
+                              onClick={() => handleEdit(blog)}
+                              className="btn-edit"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => deleteBlog(blogId)}
+                              className="btn-delete"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="blog-excerpt">
+                        {blog.content?.substring(0, 150)}
+                        {blog.content?.length > 150 ? "..." : ""}
+                      </p>
+                      
+                      <div className="blog-meta">
+                        {blog.author && <span className="blog-author">By {blog.author}</span>}
+                        {blog.created_at && (
+                          <span className="blog-date">
+                            {new Date(blog.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="blog-footer">
+                        <button className="read-more">Read Full Story →</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Newsletter Section */}
+        <section className="newsletter-section">
+          <div className="newsletter-content">
+            <h2>Stay Updated</h2>
+            <p>Get the latest blog posts and announcements delivered to your inbox</p>
+            <div className="newsletter-form">
+              <input 
+                type="email" 
+                placeholder="Enter your email address" 
+                className="newsletter-input"
+              />
+              <button className="btn-primary">Subscribe</button>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

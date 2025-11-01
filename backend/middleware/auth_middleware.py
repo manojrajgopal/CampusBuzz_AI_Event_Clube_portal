@@ -33,7 +33,6 @@ async def get_current_user(
 
 def require_role(roles: list):
     async def role_checker(user=Depends(get_current_user)):
-        print("DEBUG: Current user role:", user["role"])
         if user["role"] not in roles:
             raise HTTPException(
                 status_code=403,
