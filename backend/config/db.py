@@ -32,10 +32,11 @@ def create_app():
         try:
             await client.admin.command("ping")
             print("✅ MongoDB connected")
+            logging.info("MongoDB connected")
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            print(f"❌ MongoDB connection failed: {e}")
+            logging.error(f"MongoDB connection failed: {e}")
 
     return app
 

@@ -1,4 +1,4 @@
-// frontend/src/pages/ClubCreate.js
+// frontend/src/pages/ClubCreate.js - Apple-Inspired Redesign
 import React, { useState, useEffect } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
@@ -38,14 +38,18 @@ export default function ClubCreate() {
     try {
       const response = await API.get("http://localhost:8000/api/student/students");
       setStudents(response.data);
-      console.log("Students data loaded:", response.data);
+      console.log("✅ Student records loaded:", Object.keys(response.data).length);
     } catch (error) {
-      console.error("Failed to fetch students:", error);
+      console.error("❌ Failed to fetch students:", error);
     }
   }
 
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(prev => ({ 
+      ...prev, 
+      [name]: value 
+    }));
   }
 
   // Function to validate and get user details based on USN from local data
@@ -73,7 +77,7 @@ export default function ClubCreate() {
           autoDetectClubType(leaderDetails, studentData);
         }
       } else {
-        console.log(`Could not find student with USN: ${usn}`);
+        console.log(`❌ Student not found: ${usn}`);
         if (fieldType === 'leader') {
           setLeaderDetails(null);
         } else {
@@ -82,7 +86,7 @@ export default function ClubCreate() {
       }
       
       setValidatingUSN(prev => ({ ...prev, [fieldType]: false }));
-    }, 300);
+    }, 400);
   }
 
   // Auto-detect club type based on student skills and interests
@@ -102,11 +106,11 @@ export default function ClubCreate() {
       allInterests.push(...(subleaderData.interests || []));
     }
 
-    // Simple club type detection logic
-    const techKeywords = ['python', 'ai', 'coding', 'programming', 'web', 'software', 'tech'];
-    const artsKeywords = ['dance', 'music', 'art', 'painting', 'creative', 'design'];
-    const sportsKeywords = ['sports', 'football', 'basketball', 'cricket', 'athletics'];
-    const academicKeywords = ['research', 'science', 'math', 'engineering', 'academic'];
+    // Enhanced club type detection logic
+    const techKeywords = ['python', 'ai', 'coding', 'programming', 'web', 'software', 'tech', 'computer', 'developer', 'engineer'];
+    const artsKeywords = ['dance', 'music', 'art', 'painting', 'creative', 'design', 'photography', 'film', 'theater'];
+    const sportsKeywords = ['sports', 'football', 'basketball', 'cricket', 'athletics', 'fitness', 'yoga', 'meditation'];
+    const academicKeywords = ['research', 'science', 'math', 'engineering', 'academic', 'study', 'literature', 'writing'];
 
     const combinedText = [...allSkills, ...allInterests].join(' ').toLowerCase();
 
@@ -117,7 +121,7 @@ export default function ClubCreate() {
     } else if (artsKeywords.some(keyword => combinedText.includes(keyword))) {
       detectedType = "Arts & Cultural";
     } else if (sportsKeywords.some(keyword => combinedText.includes(keyword))) {
-      detectedType = "Sports";
+      detectedType = "Sports & Wellness";
     } else if (academicKeywords.some(keyword => combinedText.includes(keyword))) {
       detectedType = "Academic";
     }
@@ -125,25 +129,33 @@ export default function ClubCreate() {
     setForm(prev => ({ ...prev, type: detectedType }));
   }
 
-  // Handle USN input with debouncing
+  // Handle USN input with enhanced debouncing
   const handleUSNChange = (e, fieldType) => {
     const usn = e.target.value.toUpperCase(); // Convert to uppercase for consistency
-    setForm({ ...form, [e.target.name]: usn });
+    const { name } = e.target;
     
-    // Debounce the validation call
-    setTimeout(() => {
+    setForm(prev => ({ ...prev, [name]: usn }));
+    
+    // Enhanced debounce with cleanup
+    const timeoutId = setTimeout(() => {
       validateUSN(usn, fieldType);
-    }, 500);
+    }, 600);
+    
+    return () => clearTimeout(timeoutId);
   };
 
-  // Handle image upload
+  // Handle premium image upload
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.type.startsWith('image/')) {
-        setImageFile(file);
+        if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+          setImageFile(file);
+        } else {
+          alert('📁 Please select an image smaller than 5MB');
+        }
       } else {
-        alert('Please select a valid image file');
+        alert('🖼️ Please select a valid image file (JPEG, PNG, etc.)');
       }
     }
   };
@@ -152,15 +164,21 @@ export default function ClubCreate() {
     e.preventDefault();
     setLoading(true);
     
-    // Basic validation
+    // Enhanced validation with better messaging
     if (!leaderDetails) {
-      alert("❌ Please enter a valid Leader USN");
+      alert("❌ Please enter a valid Leader USN that exists in our student records");
       setLoading(false);
       return;
     }
     
     if (!subleaderDetails) {
-      alert("❌ Please enter a valid Sub Leader USN");
+      alert("❌ Please enter a valid Sub Leader USN that exists in our student records");
+      setLoading(false);
+      return;
+    }
+
+    if (form.leader_USN_id === form.subleader_USN_id) {
+      alert("❌ Leader and Sub Leader cannot be the same person");
       setLoading(false);
       return;
     }
@@ -183,6 +201,8 @@ export default function ClubCreate() {
         subleader_USN_id: form.subleader_USN_id,
       };
 
+      console.log("🚀 Submitting club creation request:", submissionData);
+
       // If image is selected, create FormData and append the file
       if (imageFile) {
         const formData = new FormData();
@@ -200,15 +220,17 @@ export default function ClubCreate() {
         await API.post("/clubs/apply/create", submissionData);
       }
 
-      alert("✅ Club creation request submitted! Wait for admin approval.");
+      alert("✅ Club creation request submitted successfully!\n\nYour request is now pending admin approval. You'll be notified once it's reviewed.");
       navigate("/");
     } catch (err) {
+      console.error("❌ Submission error:", err);
       if (err.response?.data?.detail) {
         alert(`❌ ${err.response.data.detail}`);
+      } else if (err.response?.data?.message) {
+        alert(`❌ ${err.response.data.message}`);
       } else {
-        alert("❌ Failed to create club. Please check details.");
+        alert("❌ Failed to create club. Please check your details and try again.");
       }
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -216,7 +238,7 @@ export default function ClubCreate() {
 
   return (
     <div className="club-create-container">
-      {/* Animated Background */}
+      {/* Premium Animated Background */}
       <div className="animated-bg">
         <div className="bg-shape shape-1"></div>
         <div className="bg-shape shape-2"></div>
@@ -227,11 +249,11 @@ export default function ClubCreate() {
       <div className="club-create-card">
         <div className="club-create-header">
           <h2>Create New Club</h2>
-          <p>Fill in the details below to register your club</p>
+          <p>Establish your student organization with our community platform</p>
           <small className="data-status">
             {Object.keys(students).length > 0 
-              ? `✅ Loaded ${Object.keys(students).length} student records` 
-              : '🔄 Loading student data...'}
+              ? `✅ ${Object.keys(students).length} student records loaded and ready` 
+              : '🔄 Loading student database...'}
           </small>
         </div>
 
@@ -245,12 +267,12 @@ export default function ClubCreate() {
             
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="club_name">Club Name *</label>
+                <label htmlFor="club_name" className="required">Club Name</label>
                 <input
                   id="club_name"
                   name="club_name"
                   type="text"
-                  placeholder="Enter club name"
+                  placeholder="Enter your club's official name"
                   value={form.club_name}
                   onChange={handleChange}
                   required
@@ -259,12 +281,12 @@ export default function ClubCreate() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="club_email">Club Email *</label>
+                <label htmlFor="club_email" className="required">Club Email</label>
                 <input
                   id="club_email"
                   name="club_email"
                   type="email"
-                  placeholder="club@college.edu"
+                  placeholder="club.organization@college.edu"
                   value={form.club_email}
                   onChange={handleChange}
                   required
@@ -273,96 +295,94 @@ export default function ClubCreate() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="club_password">Club Password *</label>
+                <label htmlFor="club_password" className="required">Club Password</label>
                 <input
                   id="club_password"
                   name="club_password"
                   type="password"
-                  placeholder="Create a secure password"
+                  placeholder="Create a secure password for club account"
                   value={form.club_password}
                   onChange={handleChange}
                   required
                   className="form-input"
                 />
+                <small className="input-hint">
+                  Minimum 8 characters with letters and numbers
+                </small>
               </div>
 
               <div className="form-group">
                 <label htmlFor="type">Club Type</label>
                 <input
-                  type="text"
                   id="type"
                   name="type"
+                  type="text"
+                  placeholder="Technical, Arts, Sports, Academic, etc."
                   value={form.type}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Auto-detected based on leadership"
                 />
                 <small className="input-hint">
-                  Club type is auto-detected based on leadership skills and interests
+                  Auto-detected based on leadership skills and interests
+                </small>
+              </div>
+
+              <div className="form-group full-width">
+                <label htmlFor="description">Club Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  placeholder="Describe your club's mission, activities, and goals..."
+                  value={form.description}
+                  onChange={handleChange}
+                  className="form-textarea"
+                />
+                <small className="input-hint">
+                  This description will be visible to all students
+                </small>
+              </div>
+
+              <div className="form-group full-width">
+                <label htmlFor="purpose">Purpose & Objectives</label>
+                <textarea
+                  id="purpose"
+                  name="purpose"
+                  placeholder="What specific goals and activities will your club focus on?"
+                  value={form.purpose}
+                  onChange={handleChange}
+                  className="form-textarea"
+                />
+              </div>
+
+              {/* Premium Image Upload */}
+              <div className="form-group full-width">
+                <label>Club Logo/Image</label>
+                <div className="image-upload-container">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="image-upload-input"
+                    id="club_image"
+                  />
+                  <label htmlFor="club_image" className="image-upload-label">
+                    <span className="upload-icon">📸</span>
+                    Choose Club Image
+                  </label>
+                </div>
+                {imageFile && (
+                  <div className="image-preview">
+                    ✅ Selected: {imageFile.name} ({(imageFile.size / 1024).toFixed(1)} KB)
+                  </div>
+                )}
+                <small className="input-hint">
+                  Recommended: Square image, JPG/PNG format, max 5MB
                 </small>
               </div>
             </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="description">Club Description</label>
-              <textarea
-                id="description"
-                name="description"
-                placeholder="Describe your club's mission, activities, and goals... (will be enhanced automatically)"
-                value={form.description}
-                onChange={handleChange}
-                rows="4"
-                className="form-textarea"
-              />
-              <small className="input-hint">
-                Your description will be professionally enhanced using AI
-              </small>
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="purpose">Club Purpose</label>
-              <textarea
-                id="purpose"
-                name="purpose"
-                placeholder="What is the main purpose of your club? (will be enhanced automatically)"
-                value={form.purpose}
-                onChange={handleChange}
-                rows="3"
-                className="form-textarea"
-              />
-              <small className="input-hint">
-                Your purpose will be professionally enhanced using AI
-              </small>
-            </div>
-
-            {/* Image Upload Section */}
-            <div className="form-group full-width">
-              <label htmlFor="club_image">Club Image</label>
-              <div className="image-upload-container">
-                <input
-                  type="file"
-                  id="club_image"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="image-upload-input"
-                />
-                <label htmlFor="club_image" className="image-upload-label">
-                  <span className="upload-icon">📷</span>
-                  {imageFile ? imageFile.name : "Choose Club Image"}
-                </label>
-                {imageFile && (
-                  <div className="image-preview">
-                    <small>Selected: {imageFile.name}</small>
-                  </div>
-                )}
-              </div>
-              <small className="input-hint">
-                Upload an image that represents your club (optional)
-              </small>
-            </div>
           </div>
 
-          {/* Leadership Section */}
+          {/* Leadership Team Section */}
           <div className="form-section">
             <h3 className="section-title">
               <span className="section-icon">👥</span>
@@ -370,199 +390,185 @@ export default function ClubCreate() {
             </h3>
             
             <div className="leadership-grid">
-              {/* Leader */}
+              {/* Leader Card */}
               <div className="leader-card">
                 <h4 className="leader-role">Club Leader</h4>
                 <div className="form-group">
-                  <label htmlFor="leader_USN_id">Leader USN ID *</label>
+                  <label htmlFor="leader_USN_id" className="required">Leader USN</label>
                   <input
                     id="leader_USN_id"
                     name="leader_USN_id"
                     type="text"
-                    placeholder="Enter USN (e.g., P19MT23S126051)"
+                    placeholder="Enter Leader's USN (e.g., 1RV20CS001)"
                     value={form.leader_USN_id}
                     onChange={(e) => handleUSNChange(e, 'leader')}
                     required
                     className="form-input"
                   />
-                  <div className="usn-validation-status">
-                    {validatingUSN.leader && (
-                      <small className="validating">🔄 Searching student records...</small>
-                    )}
-                    {leaderDetails && !validatingUSN.leader && (
-                      <div className="student-details-card">
-                        <div className="student-header">
-                          <h5>✅ {leaderDetails.name}</h5>
-                          <span className="student-badge">Leader</span>
-                        </div>
-                        <div className="student-info-grid">
-                          <div className="info-item">
-                            <span className="info-label">Email:</span>
-                            <span className="info-value">{leaderDetails.email}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Department:</span>
-                            <span className="info-value">{leaderDetails.department}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Year:</span>
-                            <span className="info-value">{leaderDetails.year}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Mobile:</span>
-                            <span className="info-value">{leaderDetails.mobile}</span>
-                          </div>
-                          {leaderDetails.skills && leaderDetails.skills.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Skills:</span>
-                              <div className="tags-container">
-                                {leaderDetails.skills.map((skill, index) => (
-                                  <span key={index} className="tag">{skill}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {leaderDetails.interests && leaderDetails.interests.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Interests:</span>
-                              <div className="tags-container">
-                                {leaderDetails.interests.map((interest, index) => (
-                                  <span key={index} className="tag">{interest}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {leaderDetails.achievements && leaderDetails.achievements.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Achievements:</span>
-                              <div className="tags-container">
-                                {leaderDetails.achievements.map((achievement, index) => (
-                                  <span key={index} className="tag achievement">{achievement}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {leaderDetails.description && (
-                            <div className="info-item">
-                              <span className="info-label">Description:</span>
-                              <span className="info-value description-text">{leaderDetails.description}</span>
-                            </div>
-                          )}
+                  {validatingUSN.leader && (
+                    <div className="validating">
+                      🔍 Validating USN and fetching student details...
+                    </div>
+                  )}
+                </div>
+
+                {leaderDetails && (
+                  <div className="student-details-card">
+                    <div className="student-header">
+                      <h5>Student Details</h5>
+                      <span className="student-badge">✅ Verified</span>
+                    </div>
+                    <div className="student-info-grid">
+                      <div className="info-item">
+                        <span className="info-label">Full Name</span>
+                        <span className="info-value">{leaderDetails.name}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Email</span>
+                        <span className="info-value">{leaderDetails.email}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Department</span>
+                        <span className="info-value">{leaderDetails.department}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Year</span>
+                        <span className="info-value">{leaderDetails.year}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Skills</span>
+                        <div className="tags-container">
+                          {leaderDetails.skills?.map((skill, index) => (
+                            <span key={index} className="tag">{skill}</span>
+                          ))}
                         </div>
                       </div>
-                    )}
-                    {!leaderDetails && form.leader_USN_id && !validatingUSN.leader && (
-                      <small className="invalid">❌ USN not found in student records</small>
-                    )}
+                      <div className="info-item">
+                        <span className="info-label">Interests</span>
+                        <div className="tags-container">
+                          {leaderDetails.interests?.map((interest, index) => (
+                            <span key={index} className="tag">{interest}</span>
+                          ))}
+                        </div>
+                      </div>
+                      {leaderDetails.achievements && leaderDetails.achievements.length > 0 && (
+                        <div className="info-item">
+                          <span className="info-label">Achievements</span>
+                          <div className="tags-container">
+                            {leaderDetails.achievements.map((achievement, index) => (
+                              <span key={index} className="tag achievement">{achievement}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Sub-Leader */}
+              {/* Sub Leader Card */}
               <div className="leader-card">
                 <h4 className="leader-role">Sub Leader</h4>
                 <div className="form-group">
-                  <label htmlFor="subleader_USN_id">Sub Leader USN ID *</label>
+                  <label htmlFor="subleader_USN_id" className="required">Sub Leader USN</label>
                   <input
                     id="subleader_USN_id"
                     name="subleader_USN_id"
                     type="text"
-                    placeholder="Enter USN (e.g., P19MT23S126052)"
+                    placeholder="Enter Sub Leader's USN (e.g., 1RV20CS002)"
                     value={form.subleader_USN_id}
                     onChange={(e) => handleUSNChange(e, 'subleader')}
                     required
                     className="form-input"
                   />
-                  <div className="usn-validation-status">
-                    {validatingUSN.subleader && (
-                      <small className="validating">🔄 Searching student records...</small>
-                    )}
-                    {subleaderDetails && !validatingUSN.subleader && (
-                      <div className="student-details-card">
-                        <div className="student-header">
-                          <h5>✅ {subleaderDetails.name}</h5>
-                          <span className="student-badge">Sub Leader</span>
-                        </div>
-                        <div className="student-info-grid">
-                          <div className="info-item">
-                            <span className="info-label">Email:</span>
-                            <span className="info-value">{subleaderDetails.email}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Department:</span>
-                            <span className="info-value">{subleaderDetails.department}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Year:</span>
-                            <span className="info-value">{subleaderDetails.year}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Mobile:</span>
-                            <span className="info-value">{subleaderDetails.mobile}</span>
-                          </div>
-                          {subleaderDetails.skills && subleaderDetails.skills.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Skills:</span>
-                              <div className="tags-container">
-                                {subleaderDetails.skills.map((skill, index) => (
-                                  <span key={index} className="tag">{skill}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {subleaderDetails.interests && subleaderDetails.interests.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Interests:</span>
-                              <div className="tags-container">
-                                {subleaderDetails.interests.map((interest, index) => (
-                                  <span key={index} className="tag">{interest}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {subleaderDetails.achievements && subleaderDetails.achievements.length > 0 && (
-                            <div className="info-item">
-                              <span className="info-label">Achievements:</span>
-                              <div className="tags-container">
-                                {subleaderDetails.achievements.map((achievement, index) => (
-                                  <span key={index} className="tag achievement">{achievement}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {subleaderDetails.description && (
-                            <div className="info-item">
-                              <span className="info-label">Description:</span>
-                              <span className="info-value description-text">{subleaderDetails.description}</span>
-                            </div>
-                          )}
+                  {validatingUSN.subleader && (
+                    <div className="validating">
+                      🔍 Validating USN and fetching student details...
+                    </div>
+                  )}
+                </div>
+
+                {subleaderDetails && (
+                  <div className="student-details-card">
+                    <div className="student-header">
+                      <h5>Student Details</h5>
+                      <span className="student-badge">✅ Verified</span>
+                    </div>
+                    <div className="student-info-grid">
+                      <div className="info-item">
+                        <span className="info-label">Full Name</span>
+                        <span className="info-value">{subleaderDetails.name}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Email</span>
+                        <span className="info-value">{subleaderDetails.email}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Department</span>
+                        <span className="info-value">{subleaderDetails.department}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Year</span>
+                        <span className="info-value">{subleaderDetails.year}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Skills</span>
+                        <div className="tags-container">
+                          {subleaderDetails.skills?.map((skill, index) => (
+                            <span key={index} className="tag">{skill}</span>
+                          ))}
                         </div>
                       </div>
-                    )}
-                    {!subleaderDetails && form.subleader_USN_id && !validatingUSN.subleader && (
-                      <small className="invalid">❌ USN not found in student records</small>
-                    )}
+                      <div className="info-item">
+                        <span className="info-label">Interests</span>
+                        <div className="tags-container">
+                          {subleaderDetails.interests?.map((interest, index) => (
+                            <span key={index} className="tag">{interest}</span>
+                          ))}
+                        </div>
+                      </div>
+                      {subleaderDetails.achievements && subleaderDetails.achievements.length > 0 && (
+                        <div className="info-item">
+                          <span className="info-label">Achievements</span>
+                          <div className="tags-container">
+                            {subleaderDetails.achievements.map((achievement, index) => (
+                              <span key={index} className="tag achievement">{achievement}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Submit Section */}
+          {/* Form Actions */}
           <div className="form-actions">
             <button 
               type="button" 
-              onClick={() => navigate("/")}
               className="btn-secondary"
+              onClick={() => navigate(-1)}
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              disabled={loading || !leaderDetails || !subleaderDetails}
               className="btn-primary"
+              disabled={loading || !leaderDetails || !subleaderDetails}
             >
-              {loading ? "Submitting..." : "Create Club Request"}
+              {loading ? (
+                <>
+                  <span style={{marginRight: '8px'}}>⏳</span>
+                  Creating Club...
+                </>
+              ) : (
+                <>
+                  <span style={{marginRight: '8px'}}>🚀</span>
+                  Create Club
+                </>
+              )}
             </button>
           </div>
         </form>

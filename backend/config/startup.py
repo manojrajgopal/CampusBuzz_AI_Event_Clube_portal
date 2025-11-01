@@ -18,16 +18,14 @@ async def create_default_admin():
             "created_at": datetime.utcnow()
         }
         result = await db["users"].insert_one(admin_user)
-        print("✅ Admin created:", str(result.inserted_id))
     else:
-        print("ℹ️ Admin already exists")
+        return
 
 async def test_connection():
     try:
         await db.command("ping")
-        print("✅ Connected to MongoDB")
-    except Exception as e:
-        print("❌ MongoDB connection failed:", e)
+    except Exception:
+        return
 
 def register_startup_events(app: FastAPI):
     @app.on_event("startup")

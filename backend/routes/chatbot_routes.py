@@ -64,7 +64,6 @@ def extract_gemini_text(response) -> str | None:
                         return part.text.strip()
         return None
     except Exception as e:
-        print(f"⚠️ Error extracting Gemini text: {e}")
         return None
 
 def clean_message(message: str) -> str:

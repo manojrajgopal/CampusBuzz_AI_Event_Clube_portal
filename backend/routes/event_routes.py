@@ -74,8 +74,7 @@ async def get_event_route(event_id: str):
 
 @router.post("/")
 async def create_event_route(event_in: EventIn):
-    print(event_in)
-
+    
     # Use a fixed user ID since no authorization
     user_id = "64f123456789abcdef123456"  # replace with a valid ObjectId string
 
@@ -230,8 +229,6 @@ async def get_event_participants(event_id: str):
             "qr_code": doc["qr_code"],
             "checked_in": doc.get("checked_in", False),
         })
-
-    print(participants)
     return participants
 
 # Event Check-in by user ID
