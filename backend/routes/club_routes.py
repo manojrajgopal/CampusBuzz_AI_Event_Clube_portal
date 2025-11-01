@@ -346,6 +346,7 @@ async def approve_club_application(application_id: str, admin_id: str):
         "purpose": app.get("purpose", ""),
         "type": app.get("type", "General"),
         "email": app.get("club_email"),
+        "password": app.get("club_password"),  # Store plain text password for club login
         "image_base64": app.get("image_base64", ""),  # Store image_base64 in club document
         "leader_id": normalize_id(app["user_id"]),
         "leader_data": app.get("leader_data", {}),
@@ -359,7 +360,7 @@ async def approve_club_application(application_id: str, admin_id: str):
         "members": [normalize_id(app["user_id"])],
         "created_by": normalize_id(admin_id),
         "requests": []
-        
+
     }
 
     # Insert into clubs collection
@@ -406,7 +407,6 @@ async def list_teachers_by_club(club_id: str):
 @router.get("/")
 async def getClubs():
     try:
-        print("Getting Clubs")
         cursor = db["clubs"].find({"approved": True})  # Only return approved clubs
         clubs_list = []
 
@@ -416,7 +416,6 @@ async def getClubs():
                 "name": club.get("name", ""),
                 "image_base64": club.get("image_base64", "")  # Include image_base64 in response
             })
-
        
         return clubs_list
     except Exception as e:
@@ -694,6 +693,7 @@ async def approve_application(app_id: str, user=Depends(require_role(["admin"]))
             "purpose": app.get("purpose", ""),
             "type": app.get("type", "General"),
             "email": app.get("club_email"),
+            "password": app.get("club_password"),  # Store plain text password for club login
             "image_base64": app.get("image_base64", ""),  # Include image_base64 in club creation
             "leader_id": ObjectId(app["user_id"]),
             "leader_data": app.get("leader_data", {}),
