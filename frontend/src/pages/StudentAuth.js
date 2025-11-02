@@ -9,7 +9,6 @@ export default function StudentAuth({ onClose }) {
   const [animationStep, setAnimationStep] = useState(0);
   const [wrapperActive, setWrapperActive] = useState(false);
   const [showFaceLogin, setShowFaceLogin] = useState(false);
-  const [faceImage, setFaceImage] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const navigate = useNavigate();
   const modalRef = useRef(null);
@@ -89,38 +88,76 @@ export default function StudentAuth({ onClose }) {
       streamRef.current = null;
     }
     setIsCapturing(false);
-    setFaceImage(null);
   };
 
-  // Capture face image
+  // Capture face image and convert to Base64
   const captureFace = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0);
-      const imageData = canvas.toDataURL('image/png');
-      setFaceImage(imageData);
-      
-      // Stop camera after capture
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+    return new Promise((resolve) => {
+      if (videoRef.current) {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0);
+        const imageData = canvas.toDataURL('image/png');
+        resolve(imageData);
+      } else {
+        resolve(null);
       }
-      setIsCapturing(false);
-    }
+    });
   };
 
-  // Reset face capture
-  const resetFaceCapture = () => {
-    setFaceImage(null);
-    setShowFaceLogin(true);
-    startCamera();
+  // Handle face login/signup
+  const handleFaceAuth = async () => {
+    try {
+      const faceImage = await captureFace();
+      if (!faceImage) {
+        alert("Could not capture face image. Please try again.");
+        return;
+      }
+
+      let res;
+      
+      if (isSignup) {
+        // Face signup
+        res = await API.post("/auth/student/signup", {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          faceImage: faceImage
+        });
+        alert("Signup successful! Now login.");
+        setIsSignup(false);
+        setForm({ ...form, name: "", password: "" });
+        stopCamera();
+        setShowFaceLogin(false);
+      } else {
+        // Face login
+        res = await API.post("/auth/student/login", {
+          email: form.email,
+          faceImage: faceImage
+        });
+        localStorage.setItem("token", res.data.token || res.data.access_token);
+        localStorage.setItem("role", res.data.role || "student");
+        handleClose();
+        setTimeout(() => navigate("/"), 100);
+      }
+    } catch (err) {
+      alert("Authentication failed: " + (err.response?.data?.detail || "Please try again"));
+    }
   };
 
   // Handle face login button click
   const handleFaceLoginClick = () => {
+    if (isSignup && (!form.name || !form.email || !form.password)) {
+      alert("Please fill all fields before face registration.");
+      return;
+    }
+    if (!isSignup && !form.email) {
+      alert("Please enter your email for face login.");
+      return;
+    }
+    
     setShowFaceLogin(true);
     startCamera();
   };
@@ -128,7 +165,6 @@ export default function StudentAuth({ onClose }) {
   // Handle cancel face login
   const handleCancelFaceLogin = () => {
     setShowFaceLogin(false);
-    setFaceImage(null);
     stopCamera();
   };
 
@@ -136,28 +172,10 @@ export default function StudentAuth({ onClose }) {
     try {
       let res;
       
-      if (showFaceLogin && faceImage) {
-        // Face login/signup flow
-        if (isSignup) {
-          res = await API.post("/auth/student/signup", {
-            name: form.name,
-            email: form.email,
-            password: form.password,
-            faceImage: faceImage
-          });
-          alert("Signup successful! Now login.");
-          setIsSignup(false);
-          setForm({ ...form, name: "", password: "" });
-        } else {
-          res = await API.post("/auth/student/login", {
-            email: form.email,
-            faceImage: faceImage
-          });
-          localStorage.setItem("token", res.data.token || res.data.access_token);
-          localStorage.setItem("role", res.data.role || "student");
-          handleClose();
-          setTimeout(() => navigate("/"), 100);
-        }
+      if (showFaceLogin) {
+        // Handle face authentication
+        await handleFaceAuth();
+        return;
       } else {
         // Regular email/password flow
         if (isSignup) {
@@ -181,11 +199,11 @@ export default function StudentAuth({ onClose }) {
         }
       }
     } catch (err) {
-      alert("Authentication failed");
+      alert("Authentication failed: " + (err.response?.data?.detail || "Please try again"));
     }
   }
 
-  // Student-themed background elements
+  // Student-themed background elements (unchanged)
   const StudentBackgroundElement = ({ delay, type, position, size }) => {
     const elements = {
       book: {
@@ -464,157 +482,38 @@ export default function StudentAuth({ onClose }) {
               {isSignup ? "Register Your Face" : "Face Recognition Login"}
             </h3>
             
-            {/* Camera Preview or Captured Image */}
+            {/* Camera Preview */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              marginBottom: '15px'
+              marginBottom: '20px'
             }}>
-              {faceImage ? (
-                <img 
-                  src={faceImage} 
-                  alt="Captured face" 
-                  style={{
-                    width: '200px',
-                    height: '150px',
-                    borderRadius: '10px',
-                    objectFit: 'cover',
-                    border: '2px solid #667eea'
-                  }}
-                />
-              ) : (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  style={{
-                    width: '200px',
-                    height: '150px',
-                    borderRadius: '10px',
-                    objectFit: 'cover',
-                    border: '2px solid #667eea',
-                    background: '#000'
-                  }}
-                />
-              )}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                style={{
+                  width: '200px',
+                  height: '150px',
+                  borderRadius: '10px',
+                  objectFit: 'cover',
+                  border: '2px solid #667eea',
+                  background: '#000'
+                }}
+              />
             </div>
 
-            {/* Face Capture Controls */}
-            <div style={{
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'center'
+            <p style={{
+              textAlign: 'center',
+              color: '#666',
+              fontSize: '14px',
+              marginBottom: '15px'
             }}>
-              {!faceImage ? (
-                <>
-                  <button
-                    onClick={captureFace}
-                    disabled={!isCapturing}
-                    style={{
-                      padding: '10px 20px',
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '10px',
-                      cursor: isCapturing ? 'pointer' : 'not-allowed',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      opacity: isCapturing ? 1 : 0.6,
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (isCapturing) {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 5px 15px rgba(102, 126, 234, 0.4)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (isCapturing) {
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = 'none';
-                      }
-                    }}
-                  >
-                    Capture Image
-                  </button>
-                  <button
-                    onClick={handleCancelFaceLogin}
-                    style={{
-                      padding: '10px 20px',
-                      background: 'rgba(255, 107, 107, 0.1)',
-                      color: '#ff6b6b',
-                      border: '2px solid #ff6b6b',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#ff6b6b';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(255, 107, 107, 0.1)';
-                      e.target.style.color = '#ff6b6b';
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={resetFaceCapture}
-                    style={{
-                      padding: '10px 20px',
-                      background: 'rgba(254, 202, 87, 0.1)',
-                      color: '#feca57',
-                      border: '2px solid #feca57',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#feca57';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(254, 202, 87, 0.1)';
-                      e.target.style.color = '#feca57';
-                    }}
-                  >
-                    Retake
-                  </button>
-                  <button
-                    onClick={handleCancelFaceLogin}
-                    style={{
-                      padding: '10px 20px',
-                      background: 'rgba(255, 107, 107, 0.1)',
-                      color: '#ff6b6b',
-                      border: '2px solid #ff6b6b',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#ff6b6b';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(255, 107, 107, 0.1)';
-                      e.target.style.color = '#ff6b6b';
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-            </div>
+              {isSignup ? 
+                "Position your face in the frame for registration" : 
+                "Position your face in the frame to login"
+              }
+            </p>
           </div>
         )}
 
@@ -791,7 +690,7 @@ export default function StudentAuth({ onClose }) {
               }}
             >
               <span>👤</span>
-              Face Login
+              {isSignup ? "Register with Face" : "Login with Face"}
             </button>
           </div>
         )}
@@ -808,11 +707,11 @@ export default function StudentAuth({ onClose }) {
         >
           <button 
             onClick={handleAuth}
-            disabled={showFaceLogin && !faceImage}
+            disabled={showFaceLogin && !isCapturing}
             style={{
               width: '100%',
               padding: '17px',
-              background: showFaceLogin && !faceImage ? 
+              background: showFaceLogin && !isCapturing ? 
                 'rgba(102, 126, 234, 0.3)' : 
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               border: 'none',
@@ -820,7 +719,7 @@ export default function StudentAuth({ onClose }) {
               color: 'white',
               fontSize: '16px',
               fontWeight: '600',
-              cursor: (showFaceLogin && !faceImage) ? 'not-allowed' : 'pointer',
+              cursor: (showFaceLogin && !isCapturing) ? 'not-allowed' : 'pointer',
               transition: 'all 0.4s ease',
               boxShadow: wrapperActive ? 
                 '0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0, 0, 0, 0.1)' : 
@@ -829,16 +728,16 @@ export default function StudentAuth({ onClose }) {
               transform: wrapperActive ? 'translateZ(20px)' : 'translateZ(0)',
               position: 'relative',
               overflow: 'hidden',
-              opacity: (showFaceLogin && !faceImage) ? 0.6 : 1
+              opacity: (showFaceLogin && !isCapturing) ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              if (!(showFaceLogin && !faceImage)) {
+              if (!(showFaceLogin && !isCapturing)) {
                 e.target.style.transform = 'translateY(-3px) translateZ(30px)';
                 e.target.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
-              if (!(showFaceLogin && !faceImage)) {
+              if (!(showFaceLogin && !isCapturing)) {
                 e.target.style.transform = 'translateY(0) translateZ(20px)';
                 e.target.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.4)';
               }
@@ -846,14 +745,11 @@ export default function StudentAuth({ onClose }) {
           >
             <span style={{ position: 'relative', zIndex: 2 }}>
               {showFaceLogin ? 
-                (faceImage ? 
-                  (isSignup ? "Complete Registration" : "Login with Face") : 
-                  (isSignup ? "Register with Face" : "Login with Face")
-                ) : 
+                (isSignup ? "Complete Face Registration" : "Login with Face") : 
                 (isSignup ? "Create Account" : "Login to CampusConnect")
               }
             </span>
-            {!(showFaceLogin && !faceImage) && (
+            {!(showFaceLogin && !isCapturing) && (
               <div 
                 style={{
                   position: 'absolute',
@@ -871,6 +767,39 @@ export default function StudentAuth({ onClose }) {
             )}
           </button>
 
+          {/* Cancel Button for Face Login */}
+          {showFaceLogin && (
+            <button 
+              onClick={handleCancelFaceLogin}
+              style={{
+                width: '100%',
+                padding: '15px',
+                background: 'rgba(255, 107, 107, 0.1)',
+                border: '2px solid #ff6b6b',
+                borderRadius: '15px',
+                color: '#ff6b6b',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.4s ease',
+                marginBottom: '20px',
+                transform: 'translateZ(15px)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#ff6b6b';
+                e.target.style.color = 'white';
+                e.target.style.transform = 'translateY(-2px) translateZ(20px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 107, 107, 0.1)';
+                e.target.style.color = '#ff6b6b';
+                e.target.style.transform = 'translateY(0) translateZ(15px)';
+              }}
+            >
+              Cancel
+            </button>
+          )}
+
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#666', margin: 0 }}>
               {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
@@ -878,7 +807,6 @@ export default function StudentAuth({ onClose }) {
                 onClick={() => {
                   setIsSignup(!isSignup);
                   setShowFaceLogin(false);
-                  setFaceImage(null);
                   stopCamera();
                   setAnimationStep(0);
                   setTimeout(() => {

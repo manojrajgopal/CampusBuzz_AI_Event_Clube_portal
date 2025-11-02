@@ -387,10 +387,10 @@ export default function Navbar() {
 
                       {/* Form Fields */}
                       <div className="form-grid">
-                        <input name="USN_id" placeholder="USN ID" value={formData.USN_id || ""} onChange={handleChange} className="form-input" />
-                        <input name="name" placeholder="Name" value={formData.name || ""} onChange={handleChange} className="form-input" />
-                        <input name="email" placeholder="Email" value={formData.email || ""} onChange={handleChange} className="form-input" />
-                        <input name="mobile" placeholder="Mobile" value={formData.mobile || ""} onChange={handleChange} className="form-input" />
+                        <input name="USN_id" placeholder="Enter your USN Number" value={formData.USN_id || ""} onChange={handleChange} className="form-input" />
+                        <input name="name" placeholder="Enter your full name" value={formData.name || ""} onChange={handleChange} className="form-input" />
+                        <input name="email" placeholder="Enter your email address" value={formData.email || ""} onChange={handleChange} className="form-input" />
+                        <input name="mobile" placeholder="Enter your mobile number" value={formData.mobile || ""} onChange={handleChange} className="form-input" />
                         <input name="department" placeholder="Department" value={formData.department || ""} onChange={handleChange} className="form-input" />
                         <input name="year" placeholder="Year" value={formData.year || ""} onChange={handleChange} className="form-input" />
                       </div>
@@ -398,7 +398,7 @@ export default function Navbar() {
                       <input name="skills" placeholder="Skills (comma separated)" value={formData.skills?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
                       <input name="interests" placeholder="Interests (comma separated)" value={formData.interests?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
                       <input name="achievements" placeholder="Achievements (comma separated)" value={formData.achievements?.join(", ") || ""} onChange={handleChange} className="form-input-full" />
-                      <textarea name="description" placeholder="Description" value={formData.description || ""} onChange={handleChange} className="form-textarea" />
+                      <textarea name="description" placeholder="Description" value={formData.description || ""} onChange={handleChange} className="form-textarea color:black" />
                       
                       <div className="form-buttons">
                         <button 
@@ -905,7 +905,7 @@ export default function Navbar() {
 
           .profile-name {
             margin: 0 0 8px 0;
-            color: #333;
+            color: #cc0303ff;
             font-size: 18px;
             font-weight: 700;
           }
@@ -1103,6 +1103,10 @@ export default function Navbar() {
             gap: 12px;
           }
 
+          .form-grid input::placeholder {
+            color: #2b2727ff;
+          }
+
           .form-input {
             padding: 10px;
             border-radius: 10px;
@@ -1119,6 +1123,11 @@ export default function Navbar() {
             background: #f8f9fa;
           }
 
+          .form-input-full input::placeholder {
+           color: #423b3bff;
+          }
+
+
           .form-textarea {
             padding: 10px;
             border-radius: 10px;
@@ -1127,6 +1136,10 @@ export default function Navbar() {
             background: #f8f9fa;
             resize: vertical;
             min-height: 80px;
+          }
+
+          .form-textarea::placeholder {
+            color: #423b3bff;
           }
 
           .form-buttons {

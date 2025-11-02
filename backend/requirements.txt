@@ -24,3 +24,12 @@ qrcode
 openai
 google-generativeai
 httpx
+
+# Face auth dependencies (install on servers where face auth is used)
+cryptography>=38.0.0
+numpy
+opencv-python-headless
+facenet-pytorch
+torch
+mediapipe
+pytest

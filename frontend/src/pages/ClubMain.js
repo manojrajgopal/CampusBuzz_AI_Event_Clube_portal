@@ -426,10 +426,6 @@ export default function ClubMain() {
             {club.approved ? "✅ Approved" : "⏳ Pending Approval"}
           </div>
         </div>
-        <button className="logout-btn" onClick={handleLogout}>
-          <span className="logout-icon">🚪</span>
-          Logout
-        </button>
       </div>
 
       <div className="dashboard-content">
@@ -566,8 +562,8 @@ export default function ClubMain() {
           <div className="events-section">
             <div className="section-header-main">
               <div className="section-title">
-              
-              
+                <h2>Club Events</h2>
+                <p>Manage and create events for your club</p>
               </div>
               {!showCreateForm ? (
                 <button className="btn-create-event" onClick={() => setShowCreateForm(true)}>
