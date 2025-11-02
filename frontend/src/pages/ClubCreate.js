@@ -155,7 +155,7 @@ export default function ClubCreate() {
           alert('📁 Please select an image smaller than 5MB');
         }
       } else {
-        alert('🖼️ Please select a valid image file (JPEG, PNG, etc.)');
+        alert('🖼 Please select a valid image file (JPEG, PNG, etc.)');
       }
     }
   };
@@ -252,7 +252,7 @@ export default function ClubCreate() {
           <p>Establish your student organization with our community platform</p>
           <small className="data-status">
             {Object.keys(students).length > 0 
-              ? `✅ ${Object.keys(students).length} student records loaded and ready` 
+              ? `✅ ${Object.keys(students).length} student records loaded and ready `
               : '🔄 Loading student database...'}
           </small>
         </div>

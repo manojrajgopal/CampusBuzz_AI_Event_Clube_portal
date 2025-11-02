@@ -6,6 +6,7 @@ CampusBuzz is a web-based platform that allows students to create clubs, apply t
 
 ## System Structure
 
+```bash
 CampusBuzz/
 │
 ├── backend/ # FastAPI backend
@@ -24,7 +25,7 @@ CampusBuzz/
 │ └── package.json
 │
 └── README.md # Project documentation
-
+```
 
 ---
 
@@ -94,3 +95,7 @@ JWT-based authentication is used for role management.
 Frontend uses React for dynamic UI and API integration.
 Ensure the .env file is properly configured before running the backend.
 The system has role-based access control: student, club, and admin.
+
+Contact Developer:
+Manoj G: 
+Manoj R: manojrajgopal15@gmail.com
