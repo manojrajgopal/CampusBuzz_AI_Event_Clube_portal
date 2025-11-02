@@ -545,8 +545,13 @@ export default function Events() {
 
 // Event Card Component
 function EventCard({ event, onRegister, index }) {
+  const [isRegistered, setIsRegistered] = useState(false);
+
   const handleRegister = () => {
-    onRegister(event.id);
+    if (!isRegistered) {
+      onRegister(event.id);
+      setIsRegistered(true);
+    }
   };
 
   const eventCategories = {
@@ -617,7 +622,7 @@ function EventCard({ event, onRegister, index }) {
 
         <div className="card-actions">
           <button 
-            className="register-btn"
+            className={`register-btn ${isRegistered ? 'registered' : ''}`}
             onClick={handleRegister}
           >
             <span className="btn-icon">🎯</span>
@@ -811,10 +816,19 @@ function EventCard({ event, onRegister, index }) {
           justify-content: center;
         }
 
+        .register-btn.registered {
+          background: #34C759;
+        }
+
         .register-btn:hover {
           background: #0056CC;
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(0, 122, 255, 0.4);
+        }
+
+        .register-btn.registered:hover {
+          background: #2DA44E;
+          box-shadow: 0 8px 20px rgba(52, 199, 89, 0.4);
         }
 
         .details-btn {

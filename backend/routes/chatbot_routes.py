@@ -1,4 +1,4 @@
-# routes/chatbot_routes.py
+    # routes/chatbot_routes.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from config.db import db
@@ -26,6 +26,8 @@ class ChatResponse(BaseModel):
     clubs: dict | None = None
     teachers: dict | None = None
     students: dict | None = None
+    recommended_clubs: list | None = None
+    recommended_events: list | None = None
 
 # ----------------- Helpers -----------------
 async def fetch_context_from_db() -> dict:
@@ -40,6 +42,27 @@ async def fetch_context_from_db() -> dict:
         "events": await db.events.find({}, {"_id": 0, "title": 1, "date": 1, "venue": 1, "clubName": 1}).to_list(10),
         "teachers": await db.teachers.find({}, {"_id": 0, "name": 1, "department": 1, "email": 1, "phone": 1}).to_list(10),
         "students": await db.users.find({"role": "student"}, {"_id": 0, "name": 1, "roll_no": 1, "year": 1, "email": 1}).to_list(10),
+    }
+
+async def fetch_user_profile(user_id: str) -> dict | None:
+    """Fetch user profile data for recommendations."""
+    profile = await db.student_profiles.find_one({"_id": normalize_id(user_id)})
+    if profile:
+        profile.pop("_id", None)
+        return serialize_mongo_doc(profile)
+    return None
+
+async def fetch_all_clubs_and_events() -> dict:
+    """Fetch all clubs and events for recommendations."""
+    clubs = await db.clubs.find({}, {"_id": 0, "name": 1, "description": 1, "faculty_incharge": 1, "members_count": 1}).to_list(100)
+    for club in clubs:
+        club.pop("image_base64", None)
+
+    events = await db.events.find({}, {"_id": 0, "title": 1, "description": 1, "date": 1, "venue": 1, "clubName": 1, "tags": 1}).to_list(100)
+
+    return {
+        "clubs": clubs,
+        "events": events
     }
 
 def serialize_mongo_doc(doc: dict) -> dict:
@@ -111,6 +134,24 @@ def detect_specific_query(question: str, context: dict, query_type: str) -> str 
 
     return None
 
+def detect_recommendation_query(question: str) -> str | None:
+    """Detect if the question is asking for recommendations (club or event)."""
+    question_lower = question.lower()
+    recommend_keywords = ["recommend", "suggest", "best", "suitable", "match", "for me"]
+    club_keywords = ["club", "clubs", "society", "societies"]
+    event_keywords = ["event", "events"]
+
+    has_recommend = any(kw in question_lower for kw in recommend_keywords)
+    has_club = any(kw in question_lower for kw in club_keywords)
+    has_event = any(kw in question_lower for kw in event_keywords)
+
+    if has_recommend:
+        if has_club:
+            return "club"
+        elif has_event:
+            return "event"
+    return None
+
 async def fetch_user_history(user_id: str, limit: int = 5) -> list:
     """Fetch last N messages of a user to check context and relevance."""
     logs = await db.chat_logs.find({"user_id": normalize_id(user_id)}).sort("timestamp", -1).limit(limit).to_list(limit)
@@ -152,6 +193,71 @@ def clean_message(message: str) -> str:
         pass
     return message.strip()
 
+def recommend_clubs(user_profile: dict, clubs: list) -> list:
+    """Recommend clubs based on user profile similarity."""
+    if not user_profile or not clubs:
+        return []
+
+    # Extract keywords from user profile
+    keywords = set()
+    if user_profile.get("skills"):
+        keywords.update([skill.lower() for skill in user_profile["skills"]])
+    if user_profile.get("interests"):
+        keywords.update([interest.lower() for interest in user_profile["interests"]])
+    if user_profile.get("achievements"):
+        keywords.update([ach.lower() for ach in user_profile["achievements"]])
+
+    # Score clubs based on keyword matches
+    scored_clubs = []
+    for club in clubs:
+        score = 0
+        description = club.get("description", "").lower()
+        name = club.get("name", "").lower()
+        for keyword in keywords:
+            if keyword in description or keyword in name:
+                score += 1
+        if score > 0:
+            scored_clubs.append((club, score))
+
+    # Sort by score descending and return top matches
+    scored_clubs.sort(key=lambda x: x[1], reverse=True)
+    return [club for club, score in scored_clubs[:3]]  # Top 3
+
+def recommend_events(user_profile: dict, events: list) -> list:
+    """Recommend events based on user profile similarity."""
+    if not user_profile or not events:
+        return []
+
+    # Extract keywords from user profile
+    keywords = set()
+    if user_profile.get("skills"):
+        keywords.update([skill.lower() for skill in user_profile["skills"]])
+    if user_profile.get("interests"):
+        keywords.update([interest.lower() for interest in user_profile["interests"]])
+    if user_profile.get("achievements"):
+        keywords.update([ach.lower() for ach in user_profile["achievements"]])
+
+    # Score events based on keyword matches in title, description, tags
+    scored_events = []
+    for event in events:
+        score = 0
+        title = event.get("title", "").lower()
+        description = event.get("description", "").lower()
+        tags = event.get("tags", [])
+        if tags:
+            tags_str = " ".join(tags).lower()
+        else:
+            tags_str = ""
+        for keyword in keywords:
+            if keyword in title or keyword in description or keyword in tags_str:
+                score += 1
+        if score > 0:
+            scored_events.append((event, score))
+
+    # Sort by score descending and return top matches
+    scored_events.sort(key=lambda x: x[1], reverse=True)
+    return [event for event, score in scored_events[:3]]  # Top 3
+
 # ----------------- Chatbot Route -----------------
 @router.post("/query", response_model=ChatResponse)
 async def query_chatbot(request: ChatRequest):
@@ -163,40 +269,54 @@ async def query_chatbot(request: ChatRequest):
         specific_club = detect_specific_query(request.question, context, "club")
         specific_event = detect_specific_query(request.question, context, "event")
 
-        # 3. Fetch detailed data if specific query detected (only for specific queries)
+        # 3. Detect recommendation queries
+        recommendation_type = detect_recommendation_query(request.question)
+
+        # 4. Fetch detailed data if specific query detected (only for specific queries)
         detailed_club = None
         detailed_event = None
+        user_profile = None
+        all_data = None
+
         if specific_club:
             detailed_club = await fetch_club_details(specific_club)
         elif specific_event:
             detailed_event = await fetch_event_details(specific_event)
+        elif recommendation_type:
+            # For recommendations, fetch user profile and all clubs/events
+            user_profile = await fetch_user_profile(request.user_id)
+            all_data = await fetch_all_clubs_and_events()
         else:
             # For general queries, don't fetch detailed data to save tokens
             pass
 
-        # 4. No history to save tokens
+        # 5. No history to save tokens
         history_str = ""
 
-        # 5. Build ultra-minimal prompt to guarantee token limits
+        # 6. Build ultra-minimal prompt to guarantee token limits
         if detailed_club:
             # For club queries - minimal prompt
             prompt = f"""You are a university chatbot. Provide details about this club: {json.dumps(detailed_club)}. Respond in JSON: {{"message": "answer"}}"""
         elif detailed_event:
             # For event queries - minimal prompt
             prompt = f"""You are a university chatbot. Provide details about this event: {json.dumps(detailed_event)}. Respond in JSON: {{"message": "answer"}}"""
+        elif recommendation_type and user_profile and all_data:
+            # For recommendations - send profile to Gemini for personalized response
+            data_to_recommend = all_data[recommendation_type + "s"]
+            prompt = f"""You are a university chatbot. Based on this user profile: {json.dumps(user_profile)}, recommend the top 2-3 most suitable {recommendation_type}s from this list: {json.dumps(data_to_recommend)}. Make it personalized and human-like. Respond in JSON: {{"message": "personalized recommendation"}}"""
         else:
             # For general queries - ultra minimal
             prompt = f"""You are a university chatbot. Answer: {request.question}. Respond in JSON: {{"message": "answer"}}"""
 
-        # 4. Call Gemini AI
+        # 7. Call Gemini AI
         model = genai.GenerativeModel("gemini-2.0-flash")
         response = await model.generate_content_async(prompt)
 
-        # 5. Extract and clean message
+        # 8. Extract and clean message
         raw_message = extract_gemini_text(response) or "Sorry, I couldn't find an answer."
         message = clean_message(raw_message)
 
-        # 6. Build structured response
+        # 9. Build structured response
         response_json = {"message": message}
 
         # Only include structured data if specifically requested or for specific queries
@@ -217,7 +337,18 @@ async def query_chatbot(request: ChatRequest):
         if any(keyword in q_lower for keyword in ["student", "students", "roll", "year"]):
             response_json["students"] = {s["name"]: [s] for s in context["students"][:5]}  # Limit to 5
 
-        # 7. Log chat
+        # Add recommended clubs/events if recommendation query
+        if recommendation_type and user_profile and all_data:
+            if recommendation_type == "club":
+                recommended_clubs = recommend_clubs(user_profile, all_data["clubs"])
+                if recommended_clubs:
+                    response_json["recommended_clubs"] = recommended_clubs
+            elif recommendation_type == "event":
+                recommended_events = recommend_events(user_profile, all_data["events"])
+                if recommended_events:
+                    response_json["recommended_events"] = recommended_events
+
+        # 10. Log chat
         await log_chat(request.user_id, request.question, response_json)
 
         return response_json

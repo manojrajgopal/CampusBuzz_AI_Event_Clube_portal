@@ -587,81 +587,96 @@ export default function Home() {
         </div>
       </section>
 
-{/* Join Club Section */} 
-      <section className="section clubs-section">
-        <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')"}}></div>
-        <div className="section-overlay"></div>
-        <div className="section-content">
-          <div className="section-header">
-            <h2>Join a Club</h2>
-            <div className="underline"></div>
-          </div>
-          
-          <div className="clubs-grid">
-            {safeClubs.length > 0 ? (
-              safeClubs.map((club) => (
-                <div key={club.id} className="club-poster-card">
-                  {/* Club Image */}
-                  <div className="club-image-container">
-                    {club.image_base64 ? (
-                      <img 
-                        src={`data:image/jpeg;base64,${club.image_base64}`} 
-                        alt={club.name} 
-                        className="club-image"
-                      />
-                    ) : (
-                      <div className="club-image-placeholder">
-                        <span>No Image</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Club Details */}
-                  <div className="club-details">
-                    <h3 className="club-name">{club.name}</h3>
-                    
-                    {club.email && (
-                      <div className="club-email">
-                        <span className="email-label">Email: </span>
-                        <a href={`mailto:${club.email}`} className="email-link">
-                          {club.email}
-                        </a>
-                      </div>
-                    )}
-                    
-                    {club.description && (
-                      <div className="club-description">
-                        <p>{club.description}</p>
-                      </div>
-                    )}
-                    
-                    {club.purpose && (
-                      <div className="club-purpose">
-                        <h4>Purpose</h4>
-                        <p>{club.purpose}</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Join Button */}
-                  <div className="club-actions">
-                    <button
-                      className="btn-primary join-btn"
-                      onClick={() => applyJoinClub(club.id)}
-                    >
-                      Join Club
-                    </button>
-                  </div>
+<section className="section clubs-section">
+  <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')"}}></div>
+  <div className="section-overlay"></div>
+  <div className="section-content">
+    <div className="section-header">
+      <h2>Join a Club</h2>
+      <div className="underline"></div>
+    </div>
+    
+    <div className="clubs-grid">
+      {safeClubs.length > 0 ? (
+        safeClubs.map((club) => (
+          <div key={club.id} className="club-poster-card">
+            {/* Club Image */}
+            <div className="club-image-container">
+              {club.image_base64 ? (
+                <img 
+                  src={`data:image/jpeg;base64,${club.image_base64}`} 
+                  alt={club.name} 
+                  className="club-image"
+                />
+              ) : (
+                <div className="club-image-placeholder">
+                  <span>No Image</span>
                 </div>
-              ))
-            ) : (
-              <div className="no-clubs-message">
-                <p>No clubs available to join at the moment.</p>
-              </div>
-            )}
+              )}
+            </div>
+            
+            {/* Club Details */}
+            <div className="club-details">
+              <h3 className="club-name">{club.name}</h3>
+              
+              {club.email && (
+                <div className="club-email">
+                  <span className="email-label">Email: </span>
+                  <a href={`mailto:${club.email}`} className="email-link">
+                    {club.email}
+                  </a>
+                </div>
+              )}
+              
+              {club.club_email && (
+                <div className="club-email">
+                  <span className="email-label">Club Email: </span>
+                  <a href={`mailto:${club.club_email}`} className="email-link">
+                    {club.club_email}
+                  </a>
+                </div>
+              )}
+              
+              {club.description && (
+                <div className="club-description">
+                  <p>{club.description}</p>
+                </div>
+              )}
+              
+              {club.club_description && (
+                <div className="club-description">
+                  <h4>Club Description</h4>
+                  <p>{club.club_description}</p>
+                </div>
+              )}
+              
+              {club.purpose_objectives && (
+                <div className="club-purpose">
+                  <h4>Purpose & Objectives</h4>
+                  <p>{club.purpose_objectives}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Join Button */}
+            <div className="club-actions">
+              <button
+                className="btn-primary join-btn"
+                onClick={() => applyJoinClub(club.id)}
+              >
+                Join Club
+              </button>
+            </div>
           </div>
+        ))
+      ) : (
+        <div className="no-clubs-message">
+          <p>No clubs available to join at the moment.</p>
         </div>
-      </section>
+      )}
+    </div>
+  </div>
+</section>
 
       {/* Reviews Section */}
       <section className="section reviews-section">
