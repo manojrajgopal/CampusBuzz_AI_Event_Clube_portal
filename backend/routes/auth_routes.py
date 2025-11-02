@@ -365,7 +365,7 @@ async def face_challenge(email: str = Body(...)):
     return {"challenge": "Please capture two frames: neutral then blink/close eyes quickly"}
 
 
-@router.post("/face/login")
+@router.post("face/login")
 async def face_login(payload: dict = Body(...)):
     """Login using face. Payload: {"email":str, "images": [base64_img1, base64_img2]}"""
     email = payload.get("email")
