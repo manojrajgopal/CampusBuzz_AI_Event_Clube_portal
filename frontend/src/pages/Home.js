@@ -74,7 +74,7 @@ function Chatbot() {
     try {
       console.log("Sending question to backend:", input);
       console.log("User ID:", userId);
-      const res = await API.post("/chatbot/ask", {
+      const res = await API.post("/chatbot/query", {
         question: input,
         user_id: userId,
       });
