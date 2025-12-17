@@ -7,9 +7,6 @@ from config.db import db
 from bson import ObjectId
 from utils.jwt_util import create_access_token
 from models.user_model import UserLogin, StudentSignupRequest
-from fastapi import Body, Depends
-from utils.id_util import normalize_id
-from middleware.auth_middleware import require_role, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -85,10 +82,13 @@ async def club_login(data: UserLogin):
     # Find club by email
     club = await db.clubs.find_one({"email": data.email})
     if not club:
+        print("Club not found")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Compare plain text password
     if club.get("password") != data.password:
+        print(club.get("password"), "!=", data.password)
+        print("Invalid password")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Create JWT token with club_id

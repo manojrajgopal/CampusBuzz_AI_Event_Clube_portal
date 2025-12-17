@@ -29,7 +29,7 @@ export default function Blogs() {
     setLoading(true);
     setError("");
     try {
-      const res = await API.get("/blogs/");
+      const res = await API.get("/blogs");
       setBlogs(res.data);
     } catch (err) {
       console.error("Error fetching blogs:", err);
@@ -117,25 +117,39 @@ export default function Blogs() {
     setError("");
 
     try {
-      let imageData = null;
+      if (form.mediaType === "file" && file) {
+        const formData = new FormData();
+        formData.append("title", form.title);
+        formData.append("content", form.content);
+        formData.append("mediaType", "file");
+        formData.append("file", file);
 
-      if (form.imageType === "file" && file) {
-        // Convert file to base64
-        imageData = await fileToBase64(file);
-      } else if (form.imageType === "url" && form.image) {
-        imageData = form.image;
-      }
-
-      const data = {
-        title: form.title,
-        content: form.content,
-        image: imageData,
-      };
-
-      if (editingBlog) {
-        await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, data);
+        if (editingBlog) {
+          await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+          });
+        } else {
+          await API.post("/blogs", formData, {
+            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+          });
+        }
       } else {
-        await API.post("/blogs/", data);
+        const data = {
+          title: form.title,
+          content: form.content,
+          media: form.image,
+          mediaType: form.imageType,
+        };
+
+        if (editingBlog) {
+          await API.put(`/blogs/${editingBlog._id || editingBlog.id}/json`, data, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } else {
+          await API.post("/blogs", data, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
       }
 
       alert(editingBlog ? "Blog updated!" : "Blog created!");
@@ -156,12 +170,14 @@ export default function Blogs() {
     }
 
     try {
-      await API.delete(`/blogs/${blogId}`);
+      await API.delete(`/blogs/${blogId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setBlogs(blogs.filter((b) => (b._id || b.id) !== blogId));
       alert("Blog deleted successfully!");
     } catch (err) {
       console.error("Error deleting blog:", err);
-      alert("Error deleting blog");
+      alert("Error deleting blog: " + (err.response?.data?.detail || err.message));
     }
   }
 
@@ -179,31 +195,33 @@ export default function Blogs() {
     if (!blog.image) {
       return (
         <div className="blog-media">
-          <img 
-            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80" 
-            alt="Blog default" 
+          <img
+            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80"
+            alt="Blog default"
             className="blog-image"
           />
         </div>
       );
     }
 
-    const imageUrl = blog.image;
-    const isBase64 = imageUrl.startsWith('data:image');
-    const isVideo = imageUrl.startsWith('data:video') || 
-                   (!isBase64 && /\.(mp4|webm|ogg)$/i.test(imageUrl)) || 
-                   (!isBase64 && (imageUrl.includes("youtube.com") || imageUrl.includes("vimeo.com")));
+    const mediaUrl = blog.media;
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl) ||
+                   mediaUrl.includes("youtube.com") ||
+                   mediaUrl.includes("vimeo.com") ||
+                   blog.mediaType === "video";
 
     if (isVideo) {
       return (
         <div className="blog-media">
           <video controls className="blog-video">
-            <source src={imageUrl} type="video/mp4" />
+            <source src={mediaUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
       );
     } else {
+      // For uploaded files, construct the full URL
+      const imageUrl = blog.mediaType === "file" ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split('/').pop()}` : mediaUrl;
       return (
         <div className="blog-media">
           <img 

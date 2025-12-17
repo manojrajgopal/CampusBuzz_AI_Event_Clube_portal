@@ -8,3 +8,5 @@ venv311
 __pycache__
 
 *.log
+
+build

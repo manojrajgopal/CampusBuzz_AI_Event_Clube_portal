@@ -49,7 +49,9 @@ export default function AdminDashboard() {
   }
 
   async function loadClubs() {
-    const res = await API.get("/admin/clubs");
+    const res = await API.get("/admin/clubs", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
     setClubs(res.data);
   }
 
@@ -370,7 +372,7 @@ export default function AdminDashboard() {
                       >
                         <option value="">-- Select Club --</option>
                         {clubs.map((c) => (
-                          <option key={c._id} value={c._id}>
+                          <option key={c.id} value={c.id}>
                             {c.name}
                           </option>
                         ))}
@@ -539,7 +541,7 @@ export default function AdminDashboard() {
               >
                 <option value="">-- Select Club --</option>
                 {clubs.map((c) => (
-                  <option key={c._id} value={c._id}>
+                  <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}

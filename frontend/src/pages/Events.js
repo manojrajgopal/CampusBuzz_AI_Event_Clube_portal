@@ -625,8 +625,8 @@ function EventCard({ event, onRegister, index }) {
             className={`register-btn ${isRegistered ? 'registered' : ''}`}
             onClick={handleRegister}
           >
-            <span className="btn-icon">{isRegistered ? '✅' : '🎯'}</span>
-            {isRegistered ? 'You are already registered' : 'Register Now'}
+            <span className="btn-icon">🎯</span>
+            Register Now
           </button>
 
         </div>
