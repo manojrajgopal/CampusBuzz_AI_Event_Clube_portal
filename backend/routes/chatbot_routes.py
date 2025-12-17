@@ -1,8 +1,8 @@
-    # routes/chatbot_routes.py
+# routes/chatbot_routes.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from config.db import db
-import google.generativeai as genai
+from openai import AsyncOpenAI
 import os
 from datetime import datetime
 from utils.id_util import normalize_id
@@ -12,8 +12,11 @@ from bson import ObjectId
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])
 
-# 🔑 Gemini API setup
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# 🔑 OpenAI API setup (using OpenRouter)
+client = AsyncOpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    base_url="https://openrouter.ai/api/v1"
+)
 
 # ----------------- Models -----------------
 class ChatRequest(BaseModel):
@@ -166,19 +169,10 @@ async def log_chat(user_id: str, question: str, response_json: dict) -> None:
         "timestamp": datetime.utcnow(),
     })
 
-def extract_gemini_text(response) -> str | None:
-    """Extract plain text from Gemini response safely."""
+def extract_openai_text(response) -> str | None:
+    """Extract plain text from OpenAI response safely."""
     try:
-        if hasattr(response, "text") and response.text:
-            return response.text.strip()
-        if hasattr(response, "candidates") and response.candidates:
-            candidate = response.candidates[0]
-            content = getattr(candidate, "content", None)
-            if content and hasattr(content, "parts"):
-                for part in content.parts:
-                    if hasattr(part, "text") and part.text:
-                        return part.text.strip()
-        return None
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return None
 
@@ -301,19 +295,21 @@ async def query_chatbot(request: ChatRequest):
             # For event queries - minimal prompt
             prompt = f"""You are a university chatbot. Provide details about this event: {json.dumps(detailed_event)}. Respond in JSON: {{"message": "answer"}}"""
         elif recommendation_type and user_profile and all_data:
-            # For recommendations - send profile to Gemini for personalized response
+            # For recommendations - send profile to OpenAI for personalized response
             data_to_recommend = all_data[recommendation_type + "s"]
             prompt = f"""You are a university chatbot. Based on this user profile: {json.dumps(user_profile)}, recommend the top 2-3 most suitable {recommendation_type}s from this list: {json.dumps(data_to_recommend)}. Make it personalized and human-like. Respond in JSON: {{"message": "personalized recommendation"}}"""
         else:
             # For general queries - ultra minimal
             prompt = f"""You are a university chatbot. Answer: {request.question}. Respond in JSON: {{"message": "answer"}}"""
 
-        # 7. Call Gemini AI
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = await model.generate_content_async(prompt)
+        # 7. Call OpenAI via OpenRouter
+        response = await client.chat.completions.create(
+            model="openai/gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
 
         # 8. Extract and clean message
-        raw_message = extract_gemini_text(response) or "Sorry, I couldn't find an answer."
+        raw_message = extract_openai_text(response) or "Sorry, I couldn't find an answer."
         message = clean_message(raw_message)
 
         # 9. Build structured response

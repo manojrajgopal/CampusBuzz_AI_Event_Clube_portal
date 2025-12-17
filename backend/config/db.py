@@ -31,7 +31,7 @@ def create_app():
     async def startup_db_check():
         try:
             await client.admin.command("ping")
-            print("✅ MongoDB connected")
+            print("MongoDB connected")
             logging.info("MongoDB connected")
         except asyncio.CancelledError:
             pass
@@ -40,5 +40,5 @@ def create_app():
 
     return app
 
-print("✅ MongoDB connected")
+print("MongoDB connected")
 app = create_app()
