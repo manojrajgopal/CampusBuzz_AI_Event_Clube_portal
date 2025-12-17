@@ -87,10 +87,10 @@ export default function StudentProfile() {
 
       {isEditing ? (
         <div>
-          <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} /> <br />
-          <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} /> <br />
-          <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} /> <br />
-          <input name="USN_id" placeholder="USN ID" value={formData.USN_id} onChange={handleChange} /> <br />
+          <input name="name" placeholder="Enter your full name" value={formData.name} onChange={handleChange} /> <br />
+          <input name="email" placeholder="Enter your email address" value={formData.email} onChange={handleChange} /> <br />
+          <input name="mobile" placeholder="Enter your mobile number" value={formData.mobile} onChange={handleChange} /> <br />
+          <input name="USN_id" placeholder="Enter your USN Number" value={formData.USN_id} onChange={handleChange} /> <br />
           <input name="department" placeholder="Department" value={formData.department} onChange={handleChange} /> <br />
           <input name="year" placeholder="Year" value={formData.year} onChange={handleChange} /> <br />
           <input name="skills" placeholder="Skills (comma separated)" value={formData.skills} onChange={handleChange} /> <br />

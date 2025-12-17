@@ -1,0 +1,36 @@
+/* Placeholder color improvements: make placeholder text high-contrast (black) and fully opaque */
+.form-input::placeholder,
+.form-input-full::placeholder,
+.form-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+	color: #000 !important;
+	opacity: 1 !important; /* ensure visibility even if global rules set lower opacity */
+}
+
+/* Vendor-prefixed placeholders for broader browser support */
+.form-input::-webkit-input-placeholder,
+.form-input-full::-webkit-input-placeholder,
+.form-textarea::-webkit-input-placeholder,
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+	color: #000 !important;
+	opacity: 1 !important;
+}
+.form-input:-ms-input-placeholder,
+.form-input-full:-ms-input-placeholder,
+.form-textarea:-ms-input-placeholder,
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+	color: #000 !important;
+	opacity: 1 !important;
+}
+.form-input::-ms-input-placeholder,
+.form-input-full::-ms-input-placeholder,
+.form-textarea::-ms-input-placeholder,
+input::-ms-input-placeholder,
+textarea::-ms-input-placeholder {
+	color: #000 !important;
+	opacity: 1 !important;
+}
+
