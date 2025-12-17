@@ -720,7 +720,7 @@ export default function Home() {
               <div className="contact-icon">📍</div>
               <div className="contact-details">
                 <h4>Address</h4>
-                <p>ABC University, City, State</p>
+                <p>Club Colleges, Bangalore, Karnataka</p>
               </div>
             </div>
             <div className="contact-item">
