@@ -3,17 +3,14 @@ import API from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function StudentAuth({ onClose }) {
-  const [isSignup, setIsSignup] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [isVisible, setIsVisible] = useState(false);
-  const [animationStep, setAnimationStep] = useState(0);
-  const [wrapperActive, setWrapperActive] = useState(false);
-  const [showFaceLogin, setShowFaceLogin] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const navigate = useNavigate();
-  const modalRef = useRef(null);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
+   const [isSignup, setIsSignup] = useState(false);
+   const [form, setForm] = useState({ name: "", email: "", password: "" });
+   const [isVisible, setIsVisible] = useState(false);
+   const [animationStep, setAnimationStep] = useState(0);
+   const [wrapperActive, setWrapperActive] = useState(false);
+   const [showFaceLogin, setShowFaceLogin] = useState(false);
+   const navigate = useNavigate();
+   const modalRef = useRef(null);
 
   // Show modal with wrapper activation animation
   useEffect(() => {
@@ -41,20 +38,8 @@ export default function StudentAuth({ onClose }) {
   }, []);
 
   // Clean up camera stream on unmount
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
 
   function handleClose() {
-    // Stop camera if active
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
     setWrapperActive(false);
     setIsVisible(false);
     setTimeout(() => onClose?.(), 500);
@@ -64,139 +49,29 @@ export default function StudentAuth({ onClose }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // Start camera for face login
-  const startCamera = async () => {
+
+  async function handleAuth() {
     try {
-      setIsCapturing(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 320, height: 240 } 
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      alert("Could not access camera. Please check permissions.");
-      setIsCapturing(false);
-    }
-  };
-
-  // Stop camera
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCapturing(false);
-  };
-
-  // Capture face image and convert to Base64
-  const captureFace = () => {
-    return new Promise((resolve) => {
-      if (videoRef.current) {
-        const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoRef.current, 0, 0);
-        const imageData = canvas.toDataURL('image/png');
-        resolve(imageData);
-      } else {
-        resolve(null);
-      }
-    });
-  };
-
-  // Handle face login/signup
-  const handleFaceAuth = async () => {
-    try {
-      const faceImage = await captureFace();
-      if (!faceImage) {
-        alert("Could not capture face image. Please try again.");
-        return;
-      }
-
       let res;
-      
+
       if (isSignup) {
-        // Face signup
         res = await API.post("/auth/student/signup", {
           name: form.name,
           email: form.email,
           password: form.password,
-          faceImage: faceImage
         });
         alert("Signup successful! Now login.");
         setIsSignup(false);
         setForm({ ...form, name: "", password: "" });
-        stopCamera();
-        setShowFaceLogin(false);
       } else {
-        // Face login
         res = await API.post("/auth/student/login", {
           email: form.email,
-          faceImage: faceImage
+          password: form.password,
         });
         localStorage.setItem("token", res.data.token || res.data.access_token);
         localStorage.setItem("role", res.data.role || "student");
         handleClose();
         setTimeout(() => navigate("/"), 100);
-      }
-    } catch (err) {
-      alert("Authentication failed: " + (err.response?.data?.detail || "Please try again"));
-    }
-  };
-
-  // Handle face login button click
-  const handleFaceLoginClick = () => {
-    if (isSignup && (!form.name || !form.email || !form.password)) {
-      alert("Please fill all fields before face registration.");
-      return;
-    }
-    if (!isSignup && !form.email) {
-      alert("Please enter your email for face login.");
-      return;
-    }
-    
-    setShowFaceLogin(true);
-    startCamera();
-  };
-
-  // Handle cancel face login
-  const handleCancelFaceLogin = () => {
-    setShowFaceLogin(false);
-    stopCamera();
-  };
-
-  async function handleAuth() {
-    try {
-      let res;
-      
-      if (showFaceLogin) {
-        // Handle face authentication
-        await handleFaceAuth();
-        return;
-      } else {
-        // Regular email/password flow
-        if (isSignup) {
-          res = await API.post("/auth/student/signup", {
-            name: form.name,
-            email: form.email,
-            password: form.password,
-          });
-          alert("Signup successful! Now login.");
-          setIsSignup(false);
-          setForm({ ...form, name: "", password: "" });
-        } else {
-          res = await API.post("/auth/student/login", {
-            email: form.email,
-            password: form.password,
-          });
-          localStorage.setItem("token", res.data.token || res.data.access_token);
-          localStorage.setItem("role", res.data.role || "student");
-          handleClose();
-          setTimeout(() => navigate("/"), 100);
-        }
       }
     } catch (err) {
       alert("Authentication failed: " + (err.response?.data?.detail || "Please try again"));
@@ -457,65 +332,6 @@ export default function StudentAuth({ onClose }) {
           </p>
         </div>
 
-        {/* Face Login Camera Preview */}
-        {showFaceLogin && (
-          <div 
-            style={{
-              marginBottom: '25px',
-              padding: '20px',
-              background: 'rgba(102, 126, 234, 0.05)',
-              borderRadius: '15px',
-              border: '2px solid rgba(102, 126, 234, 0.1)',
-              opacity: animationStep >= 2 ? 1 : 0,
-              transform: animationStep >= 2 ? 
-                'scale(1) translateZ(0)' : 
-                'scale(0.9) translateZ(-20px)',
-              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s'
-            }}
-          >
-            <h3 style={{
-              textAlign: 'center',
-              margin: '0 0 15px 0',
-              color: '#667eea',
-              fontSize: '18px'
-            }}>
-              {isSignup ? "Register Your Face" : "Face Recognition Login"}
-            </h3>
-            
-            {/* Camera Preview */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginBottom: '20px'
-            }}>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                style={{
-                  width: '200px',
-                  height: '150px',
-                  borderRadius: '10px',
-                  objectFit: 'cover',
-                  border: '2px solid #667eea',
-                  background: '#000'
-                }}
-              />
-            </div>
-
-            <p style={{
-              textAlign: 'center',
-              color: '#666',
-              fontSize: '14px',
-              marginBottom: '15px'
-            }}>
-              {isSignup ? 
-                "Position your face in the frame for registration" : 
-                "Position your face in the frame to login"
-              }
-            </p>
-          </div>
-        )}
 
         {/* Form with Layer Animation */}
         {!showFaceLogin && (
@@ -604,96 +420,46 @@ export default function StudentAuth({ onClose }) {
               />
             </div>
 
-            {!showFaceLogin && (
-              <div style={{ marginBottom: '20px' }}>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '16px 5px',
-                    borderRadius: '15px',
-                    border: wrapperActive ? 
-                      '2px solid rgba(102, 126, 234, 0.2)' : 
-                      '2px solid rgba(102, 126, 234, 0.1)',
-                    fontSize: '16px',
-                    outline: 'none',
-                    transition: 'all 0.4s ease',
-                    background: wrapperActive ? 
-                      'rgba(255, 255, 255, 0.9)' : 
-                      'rgba(255, 255, 255, 0.6)',
-                    boxShadow: wrapperActive ? 
-                      '0 5px 20px rgba(0, 0, 0, 0.1)' : 
-                      '0 2px 10px rgba(0, 0, 0, 0.05)',
-                    transform: wrapperActive ? 'translateZ(10px)' : 'translateZ(0)'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#667eea';
-                    e.target.style.background = 'rgba(255, 255, 255, 1)';
-                    e.target.style.transform = 'translateZ(20px)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(102, 126, 234, 0.2)';
-                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.target.style.transform = 'translateZ(10px)';
-                  }}
-                />
-              </div>
-            )}
+            <div style={{ marginBottom: '20px' }}>
+              <input
+                name="password"
+                type="password"
+                placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '16px 5px',
+                  borderRadius: '15px',
+                  border: wrapperActive ?
+                    '2px solid rgba(102, 126, 234, 0.2)' :
+                    '2px solid rgba(102, 126, 234, 0.1)',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'all 0.4s ease',
+                  background: wrapperActive ?
+                    'rgba(255, 255, 255, 0.9)' :
+                    'rgba(255, 255, 255, 0.6)',
+                  boxShadow: wrapperActive ?
+                    '0 5px 20px rgba(0, 0, 0, 0.1)' :
+                    '0 2px 10px rgba(0, 0, 0, 0.05)',
+                  transform: wrapperActive ? 'translateZ(10px)' : 'translateZ(0)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#667eea';
+                  e.target.style.background = 'rgba(255, 255, 255, 1)';
+                  e.target.style.transform = 'translateZ(20px)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(102, 126, 234, 0.2)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                  e.target.style.transform = 'translateZ(10px)';
+                }}
+              />
+            </div>
           </div>
         )}
 
-        {/* Face Login Button */}
-        {!showFaceLogin && (
-          <div 
-            style={{
-              marginBottom: '20px',
-              opacity: animationStep >= 2.5 ? 1 : 0,
-              transform: animationStep >= 2.5 ? 
-                'translateY(0) translateZ(0)' : 
-                'translateY(20px) translateZ(-20px)',
-              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s'
-            }}
-          >
-            <button 
-              onClick={handleFaceLoginClick}
-              style={{
-                width: '100%',
-                padding: '15px',
-                background: 'rgba(102, 126, 234, 0.1)',
-                border: '2px solid rgba(102, 126, 234, 0.3)',
-                borderRadius: '15px',
-                color: '#667eea',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.4s ease',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-                transform: 'translateZ(15px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(102, 126, 234, 0.2)';
-                e.target.style.transform = 'translateY(-2px) translateZ(20px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(102, 126, 234, 0.1)';
-                e.target.style.transform = 'translateY(0) translateZ(15px)';
-                e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              <span>👤</span>
-              {isSignup ? "Register with Face" : "Login with Face"}
-            </button>
-          </div>
-        )}
 
         {/* Action Buttons with Pop-in Animation */}
         <div 
@@ -705,109 +471,65 @@ export default function StudentAuth({ onClose }) {
             transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s'
           }}
         >
-          <button 
+          <button
             onClick={handleAuth}
-            disabled={showFaceLogin && !isCapturing}
             style={{
               width: '100%',
               padding: '17px',
-              background: showFaceLogin && !isCapturing ? 
-                'rgba(102, 126, 234, 0.3)' : 
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               border: 'none',
               borderRadius: '15px',
               color: 'white',
               fontSize: '16px',
               fontWeight: '600',
-              cursor: (showFaceLogin && !isCapturing) ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               transition: 'all 0.4s ease',
-              boxShadow: wrapperActive ? 
-                '0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0, 0, 0, 0.1)' : 
+              boxShadow: wrapperActive ?
+                '0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0, 0, 0, 0.1)' :
                 '0 8px 25px rgba(102, 126, 234, 0.3)',
               marginBottom: '20px',
               transform: wrapperActive ? 'translateZ(20px)' : 'translateZ(0)',
               position: 'relative',
-              overflow: 'hidden',
-              opacity: (showFaceLogin && !isCapturing) ? 0.6 : 1
+              overflow: 'hidden'
             }}
             onMouseEnter={(e) => {
-              if (!(showFaceLogin && !isCapturing)) {
-                e.target.style.transform = 'translateY(-3px) translateZ(30px)';
-                e.target.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.5)';
-              }
+              e.target.style.transform = 'translateY(-3px) translateZ(30px)';
+              e.target.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.5)';
             }}
             onMouseLeave={(e) => {
-              if (!(showFaceLogin && !isCapturing)) {
-                e.target.style.transform = 'translateY(0) translateZ(20px)';
-                e.target.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.4)';
-              }
+              e.target.style.transform = 'translateY(0) translateZ(20px)';
+              e.target.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.4)';
             }}
           >
             <span style={{ position: 'relative', zIndex: 2 }}>
-              {showFaceLogin ? 
-                (isSignup ? "Complete Face Registration" : "Login with Face") : 
+              {showFaceLogin ?
+                (isSignup ? "Complete Face Registration" : "Login with Face") :
                 (isSignup ? "Create Account" : "Login to CampusConnect")
               }
             </span>
-            {!(showFaceLogin && !isCapturing) && (
-              <div 
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: '-100%',
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  transition: 'left 0.6s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.left = '100%';
-                }}
-              />
-            )}
-          </button>
-
-          {/* Cancel Button for Face Login */}
-          {showFaceLogin && (
-            <button 
-              onClick={handleCancelFaceLogin}
+            <div
               style={{
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
                 width: '100%',
-                padding: '15px',
-                background: 'rgba(255, 107, 107, 0.1)',
-                border: '2px solid #ff6b6b',
-                borderRadius: '15px',
-                color: '#ff6b6b',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.4s ease',
-                marginBottom: '20px',
-                transform: 'translateZ(15px)'
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                transition: 'left 0.6s ease'
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#ff6b6b';
-                e.target.style.color = 'white';
-                e.target.style.transform = 'translateY(-2px) translateZ(20px)';
+                e.target.style.left = '100%';
               }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 107, 107, 0.1)';
-                e.target.style.color = '#ff6b6b';
-                e.target.style.transform = 'translateY(0) translateZ(15px)';
-              }}
-            >
-              Cancel
-            </button>
-          )}
+            />
+          </button>
+
 
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#666', margin: 0 }}>
               {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-              <button 
+              <button
                 onClick={() => {
                   setIsSignup(!isSignup);
-                  setShowFaceLogin(false);
-                  stopCamera();
                   setAnimationStep(0);
                   setTimeout(() => {
                     const steps = [1, 2, 3, 4, 5];

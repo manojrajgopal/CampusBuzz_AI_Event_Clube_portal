@@ -40,4 +40,5 @@ def create_app():
 
     return app
 
+print("✅ MongoDB connected")
 app = create_app()
