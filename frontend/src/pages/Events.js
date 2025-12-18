@@ -3,6 +3,20 @@ import React, { useEffect, useState } from "react";
 import API from "../api";
 import { Link } from "react-router-dom";
 
+const fallbackMedia = ["/images/Achivement.jpg", "/images/fashion.jpg", "/images/programming'.jpg", "/images/reporterBoy.png", "/images/song (1).mp4"];
+
+function getRandomFallback() {
+  return fallbackMedia[Math.floor(Math.random() * fallbackMedia.length)];
+}
+
+function getEventImageSrc(event) {
+  if (event.imageUrl) return event.imageUrl;
+  if (event.image_url) return event.image_url;
+  if (event.poster) return event.poster;
+  if (event.image_base64) return `data:image/jpeg;base64,${event.image_base64}`;
+  return getRandomFallback();
+}
+
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -692,8 +706,8 @@ function EventCard({ event, onRegister, index }) {
     >
       <div className="card-header">
         <div className="card-image">
-          <img 
-            src={event.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"} 
+          <img
+            src={getEventImageSrc(event)}
             alt={event.title}
           />
           <div className="image-overlay"></div>
@@ -1275,14 +1289,8 @@ function ScrapedEventCard({ event, index }) {
       <div className="card-header">
         <div className="card-image">
           <img
-            src={event.image_url || event.image_base64 ?
-              `data:image/jpeg;base64,${event.image_base64}` :
-              "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-            }
+            src={getEventImageSrc(event)}
             alt={event.event_name}
-            onError={(e) => {
-              e.target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80";
-            }}
           />
           <div className="image-overlay"></div>
           <div
