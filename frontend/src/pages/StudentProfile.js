@@ -23,7 +23,16 @@ export default function StudentProfile() {
 
   // Fetch profile when page loads
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchData() {
+      try {
+        const userRes = await API.get("/student/me", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setFormData(prev => ({ ...prev, name: userRes.data.name, email: userRes.data.email }));
+      } catch (err) {
+        console.error("Error fetching user info", err);
+      }
+
       try {
         const res = await API.get("/student/profile", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -47,7 +56,7 @@ export default function StudentProfile() {
         setLoading(false);
       }
     }
-    fetchProfile();
+    fetchData();
   }, []);
 
   // Handle input changes
@@ -88,7 +97,7 @@ export default function StudentProfile() {
       {isEditing ? (
         <div>
           <input name="name" placeholder="Enter your full name" value={formData.name} onChange={handleChange} /> <br />
-          <input name="email" placeholder="Enter your email address" value={formData.email} onChange={handleChange} /> <br />
+          <input name="email" placeholder="Enter your email address" value={formData.email} onChange={handleChange} disabled /> <br />
           <input name="mobile" placeholder="Enter your mobile number" value={formData.mobile} onChange={handleChange} /> <br />
           <input name="USN_id" placeholder="Enter your USN Number" value={formData.USN_id} onChange={handleChange} /> <br />
           <input name="department" placeholder="Department" value={formData.department} onChange={handleChange} /> <br />

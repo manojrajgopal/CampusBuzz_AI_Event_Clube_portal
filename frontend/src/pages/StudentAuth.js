@@ -3,14 +3,15 @@ import API from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function StudentAuth({ onClose }) {
-   const [isSignup, setIsSignup] = useState(false);
-   const [form, setForm] = useState({ name: "", email: "", password: "" });
-   const [isVisible, setIsVisible] = useState(false);
-   const [animationStep, setAnimationStep] = useState(0);
-   const [wrapperActive, setWrapperActive] = useState(false);
-   const [showFaceLogin, setShowFaceLogin] = useState(false);
-   const navigate = useNavigate();
-   const modalRef = useRef(null);
+    const [isSignup, setIsSignup] = useState(false);
+    const [form, setForm] = useState({ name: "", email: "", password: "" });
+    const [isVisible, setIsVisible] = useState(false);
+    const [animationStep, setAnimationStep] = useState(0);
+    const [wrapperActive, setWrapperActive] = useState(false);
+    const [showFaceLogin, setShowFaceLogin] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
+    const modalRef = useRef(null);
 
   // Show modal with wrapper activation animation
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function StudentAuth({ onClose }) {
           email: form.email,
           password: form.password,
         });
+        localStorage.clear();
         localStorage.setItem("token", res.data.token || res.data.access_token);
         localStorage.setItem("role", res.data.role || "student");
         handleClose();
@@ -420,16 +422,16 @@ export default function StudentAuth({ onClose }) {
               />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px', position: 'relative' }}>
               <input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={form.password}
                 onChange={handleChange}
                 style={{
                   width: '100%',
-                  padding: '16px 5px',
+                  padding: '16px 50px 16px 5px',
                   borderRadius: '15px',
                   border: wrapperActive ?
                     '2px solid rgba(102, 126, 234, 0.2)' :
@@ -456,6 +458,27 @@ export default function StudentAuth({ onClose }) {
                   e.target.style.transform = 'translateZ(10px)';
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  color: '#667eea',
+                  padding: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
             </div>
           </div>
         )}

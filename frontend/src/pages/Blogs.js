@@ -3,6 +3,12 @@ import React, { useEffect, useState } from "react";
 import API from "../api";
 import "./Blogs.css";
 
+const fallbackMedia = ["/images/Achivement.jpg", "/images/fashion.jpg", "/images/programming'.jpg", "/images/reporterBoy.png", "/images/song (1).mp4"];
+
+function getRandomFallback() {
+  return fallbackMedia[Math.floor(Math.random() * fallbackMedia.length)];
+}
+
 export default function Blogs() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +36,7 @@ export default function Blogs() {
     setError("");
     try {
       const res = await API.get("/blogs");
+      console.log("Fetched blogs:", res.data);
       setBlogs(res.data);
     } catch (err) {
       console.error("Error fetching blogs:", err);
@@ -117,39 +124,29 @@ export default function Blogs() {
     setError("");
 
     try {
-      if (form.mediaType === "file" && file) {
-        const formData = new FormData();
-        formData.append("title", form.title);
-        formData.append("content", form.content);
-        formData.append("mediaType", "file");
-        formData.append("file", file);
+      let media = form.image;
+      let mediaType = form.imageType;
 
-        if (editingBlog) {
-          await API.put(`/blogs/${editingBlog._id || editingBlog.id}`, formData, {
-            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
-          });
-        } else {
-          await API.post("/blogs", formData, {
-            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
-          });
-        }
+      if (form.imageType === "file" && file) {
+        media = await fileToBase64(file);
+        mediaType = "file";
+      }
+
+      const data = {
+        title: form.title,
+        content: form.content,
+        media: media,
+        mediaType: mediaType,
+      };
+
+      if (editingBlog) {
+        await API.put(`/blogs/${editingBlog._id || editingBlog.id}/json`, data, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
-        const data = {
-          title: form.title,
-          content: form.content,
-          media: form.image,
-          mediaType: form.imageType,
-        };
-
-        if (editingBlog) {
-          await API.put(`/blogs/${editingBlog._id || editingBlog.id}/json`, data, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } else {
-          await API.post("/blogs", data, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        }
+        await API.post("/blogs", data, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
 
       alert(editingBlog ? "Blog updated!" : "Blog created!");
@@ -190,53 +187,101 @@ export default function Blogs() {
     }
   }
 
-  // Enhanced image rendering function
-  function renderImage(blog) {
-    if (!blog.image) {
-      return (
-        <div className="blog-media">
-          <img
-            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80"
-            alt="Blog default"
-            className="blog-image"
-          />
-        </div>
-      );
-    }
+function renderImage(blog) {
+  console.debug("[renderImage] called");
+  console.debug("[renderImage] blog object:", blog);
 
-    const mediaUrl = blog.media;
-    const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl) ||
-                   mediaUrl.includes("youtube.com") ||
-                   mediaUrl.includes("vimeo.com") ||
-                   blog.mediaType === "video";
+  if (!blog.media) {
+    console.warn("[renderImage] blog.media is missing, using random fallback");
+    const fallbackUrl = getRandomFallback();
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(fallbackUrl);
 
     if (isVideo) {
       return (
         <div className="blog-media">
-          <video controls className="blog-video">
-            <source src={mediaUrl} type="video/mp4" />
+          <video
+            controls
+            className="blog-video"
+            src={fallbackUrl}
+            onPlay={() => console.debug("[renderImage] Fallback video started playing")}
+            onPause={() => console.debug("[renderImage] Fallback video paused")}
+            onError={(e) => console.error("[renderImage] Fallback video error", e)}
+          >
             Your browser does not support the video tag.
           </video>
         </div>
       );
     } else {
-      // For uploaded files, construct the full URL
-      const imageUrl = blog.mediaType === "file" ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split('/').pop()}` : mediaUrl;
       return (
         <div className="blog-media">
-          <img 
-            src={imageUrl} 
-            alt={blog.title} 
+          <img
+            src={fallbackUrl}
+            alt="Blog media"
             className="blog-image"
-            onError={(e) => {
-              // If image fails to load, show default image
-              e.target.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80";
-            }}
+            onLoad={() => console.debug("[renderImage] Fallback image loaded successfully")}
+            onError={(e) => console.error("[renderImage] Fallback image failed to load", e)}
           />
         </div>
       );
     }
   }
+
+  const mediaUrl = blog.media;
+  console.debug("[renderImage] mediaUrl:", mediaUrl);
+
+  const isVideo =
+    /\.(mp4|webm|ogg)$/i.test(mediaUrl) ||
+    mediaUrl.includes("youtube.com") ||
+    mediaUrl.includes("vimeo.com") ||
+    blog.mediaType === "video";
+
+  console.debug("[renderImage] blog.mediaType:", blog.mediaType);
+  console.debug("[renderImage] isVideo:", isVideo);
+
+  if (isVideo) {
+    console.debug("[renderImage] Rendering VIDEO");
+
+    return (
+      <div className="blog-media">
+        <video
+          controls
+          className="blog-video"
+          src={mediaUrl}
+          onPlay={() => console.debug("[renderImage] Video started playing")}
+          onPause={() => console.debug("[renderImage] Video paused")}
+          onError={(e) => console.error("[renderImage] Video error", e)}
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  } else {
+    console.debug("[renderImage] Rendering IMAGE");
+
+    const imageUrl =
+      blog.mediaType === "file"
+        ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split("/").pop()}`
+        : mediaUrl;
+
+    console.debug("[renderImage] Computed imageUrl:", imageUrl);
+
+    return (
+      <div className="blog-media">
+        <img
+          src={imageUrl}
+          alt={blog.title}
+          className="blog-image"
+          onLoad={() => {
+            console.debug("[renderImage] Image loaded successfully:", imageUrl);
+          }}
+          onError={(e) => {
+            console.error("[renderImage] Image failed to load", { failedUrl: imageUrl, event: e });
+          }}
+        />
+      </div>
+    );
+  }
+}
 
   return (
     <div className="blogs-page">

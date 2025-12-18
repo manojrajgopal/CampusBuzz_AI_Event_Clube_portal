@@ -1034,7 +1034,7 @@ function EventsHighlights() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .highlights-section {
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(20px);

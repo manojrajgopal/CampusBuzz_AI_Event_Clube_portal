@@ -17,10 +17,12 @@ def serialize_profile(profile):
     }
 
 # ----------------- Core Functions -----------------
-async def create_or_update_profile(user_id: str, profile_in: StudentProfileIn):
+async def create_or_update_profile(user_id: str, profile_in: StudentProfileIn, user: dict):
     existing = await db[COLLECTION].find_one({"user_id": ObjectId(user_id)})
     profile_data = profile_in.dict()
     profile_data["user_id"] = ObjectId(user_id)
+    profile_data["name"] = user["name"]
+    profile_data["email"] = user["email"]
 
     if existing:
         await db[COLLECTION].update_one({"user_id": ObjectId(user_id)}, {"$set": profile_data})
@@ -44,9 +46,17 @@ async def is_profile_completed(user_id: str) -> bool:
 
 
 # ----------------- Routes -----------------
+@router.get("/me")
+async def get_current_user_info(user=Depends(require_role(["student"]))):
+    return {
+        "user_id": user["_id"],
+        "name": user["name"],
+        "email": user["email"]
+    }
+
 @router.post("/profile", response_model=StudentProfileOut)
 async def create_profile(profile: StudentProfileIn, user=Depends(require_role(["student"]))):
-    return await create_or_update_profile(user["_id"], profile)
+    return await create_or_update_profile(user["_id"], profile, user)
 
 
 @router.get("/profile", response_model=StudentProfileOut)

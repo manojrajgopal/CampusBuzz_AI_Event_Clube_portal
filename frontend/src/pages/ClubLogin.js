@@ -7,6 +7,7 @@ export default function ClubLogin({ onClose }) {
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [isVisible, setIsVisible] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const modalRef = useRef(null);
 
@@ -296,19 +297,19 @@ export default function ClubLogin({ onClose }) {
           </div>
 
           {/* Password Input */}
-          <div style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '30px', position: 'relative' }}>
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Club Password"
               value={form.password}
               onChange={handleChange}
               style={{
                 width: '100%',
-                padding: '15px 0px',
+                padding: '15px 50px 15px 0px',
                 borderRadius: '15px',
-                border: errors.password ? 
-                  '2px solid #dc3545' : 
+                border: errors.password ?
+                  '2px solid #dc3545' :
                   '2px solid rgba(139, 69, 19, 0.1)',
                 fontSize: '16px',
                 outline: 'none',
@@ -324,6 +325,27 @@ export default function ClubLogin({ onClose }) {
                 e.target.style.background = 'rgba(255, 255, 255, 0.8)';
               }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '18px',
+                color: '#8B4513',
+                padding: '5px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
             {errors.password && (
               <div style={{
                 color: '#dc3545',
