@@ -11,12 +11,13 @@ from routes import (auth_routes,
                       club_routes,
                       registration_routes,
                       student_routes,
-                       admin_routes,
-                       chatbot_routes as chatbot_router)
+                        admin_routes,
+                        chatbot_routes as chatbot_router)
 
 from config.startup import register_startup_events  # Import startup tasks
 from routes.blog_routes import router as blog_router
 from routes.event_scraper_routes import router as event_scraper_router
+from routes.performance_routes import router as performance_router
 
 app = FastAPI(title="CampusBuzz API", version="0.1")
 
@@ -67,6 +68,7 @@ app.include_router(blog_router)
 app.include_router(admin_routes.router, prefix="/api")  # Admin routes under /api/admin
 app.include_router(chatbot_router.router)  # Chatbot routes
 app.include_router(event_scraper_router)
+app.include_router(performance_router)
 
 # --- Root endpoint --
 @app.get("/")

@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [performanceAnalytics, setPerformanceAnalytics] = useState([]);
   const [newTeacher, setNewTeacher] = useState({
     name: "",
     email: "",
@@ -30,7 +31,7 @@ export default function AdminDashboard() {
   async function loadAllData() {
     try {
       setIsLoading(true);
-      await Promise.all([loadEvents(), loadTeachers(), loadClubs(), loadApplications()]);
+      await Promise.all([loadEvents(), loadTeachers(), loadClubs(), loadApplications(), loadPerformanceAnalytics()]);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -64,6 +65,16 @@ export default function AdminDashboard() {
       setApplications(res.data);
     } catch (error) {
       console.error("Error loading applications:", error);
+    }
+  }
+
+  // ------------------- PERFORMANCE ANALYTICS -------------------
+  async function loadPerformanceAnalytics() {
+    try {
+      const res = await API.get("/performance/analytics");
+      setPerformanceAnalytics(res.data);
+    } catch (error) {
+      console.error("Error loading performance analytics:", error);
     }
   }
 
@@ -213,11 +224,17 @@ export default function AdminDashboard() {
         >
           Teachers
         </button>
-        <button 
-          className={activeTab === "applications" ? "admin-tab active" : "admin-tab"} 
+        <button
+          className={activeTab === "applications" ? "admin-tab active" : "admin-tab"}
           onClick={() => setActiveTab("applications")}
         >
           Applications
+        </button>
+        <button
+          className={activeTab === "performance" ? "admin-tab active" : "admin-tab"}
+          onClick={() => setActiveTab("performance")}
+        >
+          Performance
         </button>
       </div>
 
@@ -449,6 +466,59 @@ export default function AdminDashboard() {
                     >
                       Reject
                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Performance Analytics Section */}
+      {activeTab === "performance" && (
+        <div className="admin-section">
+          <div className="section-header">
+            <h2>Performance Analytics</h2>
+            <p>View student performance metrics and analytics</p>
+          </div>
+
+          {performanceAnalytics.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📊</div>
+              <h3>No performance data</h3>
+              <p>There are no performance analytics available</p>
+            </div>
+          ) : (
+            <div className="performance-grid">
+              {performanceAnalytics.map((analytics) => (
+                <div key={analytics.student_id} className="performance-card">
+                  <div className="performance-header">
+                    <h3>{analytics.student_name || `Student ${analytics.student_id.slice(-4)}`}</h3>
+                    <span className={`performance-badge ${analytics.performance_level.toLowerCase()}`}>
+                      {analytics.performance_level}
+                    </span>
+                  </div>
+                  <div className="performance-metrics">
+                    <div className="metric">
+                      <span className="metric-label">Overall Average:</span>
+                      <span className="metric-value">{analytics.overall_average}%</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Academic Average:</span>
+                      <span className="metric-value">{analytics.academic_average}%</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Non-Academic Average:</span>
+                      <span className="metric-value">{analytics.non_academic_average}%</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Total Records:</span>
+                      <span className="metric-value">{analytics.total_records}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Trend:</span>
+                      <span className="metric-value">{analytics.trend}</span>
+                    </div>
                   </div>
                 </div>
               ))}

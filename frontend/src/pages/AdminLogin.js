@@ -80,6 +80,8 @@ export default function AdminLogin({ onClose }) {
       localStorage.setItem("token", res.data.token || res.data.access_token);
       console.log("Admin login response:", res);
       localStorage.setItem("role", res.data.role || "admin");
+      localStorage.setItem("userId", res.data.user_id);
+      localStorage.setItem("userName", res.data.name);
       localStorage.setItem("adminEmail", form.email);
       
       handleClose();

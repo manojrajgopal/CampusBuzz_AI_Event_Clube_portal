@@ -4,6 +4,144 @@ import API from "../api";
 import { Link } from "react-router-dom";
 import "./Home.css";
 
+// Mock data generator for student performance
+function generateStudentMockData(studentId, userName, userEmail) {
+  // Create consistent random seed based on user ID
+  const seed = studentId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const random = (min, max) => {
+    const x = Math.sin(seed + min + max) * 10000;
+    return min + (max - min) * (x - Math.floor(x));
+  };
+
+  // Generate performance data based on user characteristics
+  const subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English"];
+  const activities = ["Class Participation", "Lab Work", "Group Project", "Quiz", "Assignment"];
+
+  // Base performance level varies by user
+  const basePerformance = 60 + (seed % 25); // 60-85 range
+  const performanceMultiplier = seed % 3; // 0, 1, or 2
+
+  const performanceData = [];
+  const notifications = [];
+  let totalScore = 0;
+  let recordCount = 0;
+
+  // Generate 8-12 performance records
+  const numRecords = 8 + (seed % 5);
+  for (let i = 0; i < numRecords; i++) {
+    const isAcademic = random(0, 1) > 0.3; // 70% academic, 30% non-academic
+    const date = new Date();
+    date.setDate(date.getDate() - (i * 7)); // Spread over weeks
+
+    let category, subcategory, score, level;
+
+    if (isAcademic) {
+      category = "subject";
+      subcategory = subjects[i % subjects.length];
+      score = Math.round(basePerformance + random(-15, 15) + (performanceMultiplier * 5));
+      score = Math.max(45, Math.min(100, score));
+    } else {
+      category = ["club_participation", "attendance", "engagement"][i % 3];
+      subcategory = activities[i % activities.length];
+      score = Math.round(75 + random(-10, 15) + (performanceMultiplier * 3));
+      score = Math.max(60, Math.min(100, score));
+    }
+
+    // Calculate level
+    if (score >= 85) level = "excellent";
+    else if (score >= 70) level = "average";
+    else level = "low";
+
+    totalScore += score;
+    recordCount++;
+
+    performanceData.push({
+      id: `mock_${studentId}_${i}`,
+      student_id: studentId,
+      type: isAcademic ? "academic" : "non_academic",
+      category: category,
+      subcategory: subcategory,
+      score: score,
+      max_score: 100,
+      semester: "Fall 2024",
+      year: "2024",
+      description: `${subcategory} performance`,
+      calculated_level: level,
+      created_at: date.toISOString(),
+      updated_at: date.toISOString()
+    });
+
+    // Generate notifications for low performance
+    if (score < 70 && random(0, 1) > 0.7) {
+      notifications.push({
+        id: `notif_${studentId}_${i}`,
+        student_id: studentId,
+        type: "low_performance",
+        title: "Performance Alert",
+        message: `Your ${subcategory} score of ${score}% needs improvement. Consider reviewing the material and seeking help.`,
+        priority: "high",
+        read: random(0, 1) > 0.5,
+        created_at: date.toISOString()
+      });
+    }
+  }
+
+  // Calculate average for AI prediction
+  const averageScore = totalScore / recordCount;
+  const trend = performanceMultiplier === 0 ? "improving" :
+                performanceMultiplier === 1 ? "stable" : "declining";
+
+  const aiPrediction = {
+    student_id: studentId,
+    predicted_score: Math.round(averageScore + random(-5, 8)),
+    confidence: 75 + (seed % 20),
+    trend: trend,
+    suggestions: [
+      "Focus on regular practice and review sessions",
+      "Participate actively in class discussions",
+      "Seek help from instructors when needed",
+      "Maintain consistent study habits",
+      "Join study groups for peer learning"
+    ].slice(0, 3 + (seed % 2)),
+    generated_at: new Date().toISOString()
+  };
+
+  const aiSuggestions = {
+    student_id: studentId,
+    suggestions: [
+      "Create a dedicated study schedule and stick to it",
+      "Use active recall techniques for better retention",
+      "Take regular breaks using the Pomodoro technique",
+      "Review and correct mistakes from assignments",
+      "Practice with past exam papers",
+      "Join online forums for subject-related discussions"
+    ].slice(0, 4 + (seed % 3)),
+    priority_areas: subjects.slice(0, 2 + (seed % 2)),
+    generated_at: new Date().toISOString()
+  };
+
+  // Add some positive notifications
+  if (averageScore > 80 && notifications.length < 2) {
+    notifications.push({
+      id: `notif_${studentId}_positive`,
+      student_id: studentId,
+      type: "improvement",
+      title: "Great Performance!",
+      message: `Excellent work! Your overall performance is outstanding. Keep up the great work!`,
+      priority: "medium",
+      read: false,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  return {
+    performanceData,
+    notifications,
+    aiPrediction,
+    aiSuggestions
+  };
+}
+
 // Chatbot Component (unchanged as requested)
 function Chatbot() {
   const [messages, setMessages] = useState([]);
@@ -201,6 +339,14 @@ export default function Home() {
   const threeContainerRef = useRef(null);
   const role = localStorage.getItem("role");
 
+  // Performance tracking states for students
+  const [performanceData, setPerformanceData] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [aiPrediction, setAiPrediction] = useState(null);
+  const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [performanceLoading, setPerformanceLoading] = useState(false);
+
   const [selectedClub, setSelectedClub] = useState(
     localStorage.getItem("selectedClub") || ""
   );
@@ -373,6 +519,8 @@ export default function Home() {
     fetchClubs();
   }, []);
 
+
+
   async function registerEvent(eventId) {
     try {
       await API.post(`/events/${eventId}/register`, {}, {
@@ -512,16 +660,185 @@ export default function Home() {
     }
   };
 
+  // Smooth scroll function
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Open performance modal with mock data
+  const openPerformanceModal = () => {
+    setShowPerformanceModal(true);
+    setPerformanceLoading(true);
+
+    // Generate mock data immediately
+    const studentId = localStorage.getItem("userId") || "demo_student";
+    const userName = localStorage.getItem("userName") || "Student";
+    const userEmail = localStorage.getItem("adminEmail") || localStorage.getItem("userEmail") || "";
+
+    const mockData = generateStudentMockData(studentId, userName, userEmail);
+
+    // Simulate loading time for better UX
+    setTimeout(() => {
+      setPerformanceData(mockData.performanceData);
+      setNotifications(mockData.notifications);
+      setAiPrediction(mockData.aiPrediction);
+      setAiSuggestions(mockData.aiSuggestions);
+      setPerformanceLoading(false);
+    }, 1500);
+  };
+
+  // Close performance modal
+  const closePerformanceModal = () => {
+    setShowPerformanceModal(false);
+  };
+
   return (
     <div className="home-page">
+      {/* Navigation Bar */}
+      <nav className="home-navigation" style={{
+        position: 'fixed',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '25px',
+        padding: '10px 20px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div className="nav-buttons" style={{
+          display: 'flex',
+          gap: '15px',
+          alignItems: 'center'
+        }}>
+          <button
+            onClick={() => scrollToSection('hero')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            Home
+          </button>
+          <button
+            onClick={() => scrollToSection('information')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            Information
+          </button>
+          <button
+            onClick={() => scrollToSection('events')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            Events
+          </button>
+          <button
+            onClick={() => scrollToSection('blogs')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            Blogs
+          </button>
+          <button
+            onClick={() => scrollToSection('contact')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            Contact
+          </button>
+          {/* Student Performance Button - Only for logged-in students */}
+          {role === "student" && (
+            <button
+              onClick={() => openPerformanceModal()}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                padding: '8px 16px',
+                borderRadius: '20px',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+              }}
+              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+            >
+              📊 Student Performance
+            </button>
+          )}
+        </div>
+      </nav>
+
       {/* Three.js Background */}
       <div ref={threeContainerRef} className="three-background"></div>
-      
+
       {/* Chatbot Component */}
       <Chatbot />
       
       {/* Hero Section with rotating images */}
-      <section className="hero-section">
+      <section id="hero" className="hero-section">
         <div className="hero-slideshow">
           {heroImages.map((image, index) => (
             <div 
@@ -557,6 +874,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* Information Section */}
       <section className="information-section" id="information">
@@ -605,7 +923,7 @@ export default function Home() {
       </section>
 
       {/* Upcoming Events */}
-      <section className="section events-section">
+      <section id="events" className="section events-section">
         <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80')"}}></div>
         <div className="section-overlay"></div>
         <div className="section-content">
@@ -649,7 +967,7 @@ export default function Home() {
       </section>
 
       {/* Latest Blogs */}
-      <section className="section blogs-section">
+      <section id="blogs" className="section blogs-section">
         <div className="section-background" style={{backgroundImage: "url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80')"}}></div>
         <div className="section-overlay"></div>
         <div className="section-content">
@@ -855,6 +1173,243 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Student Performance Modal */}
+      {showPerformanceModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(20, 20, 40, 0.98) 100%)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '30px',
+            width: '90%',
+            maxWidth: '1000px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '30px',
+              paddingBottom: '20px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <h2 style={{
+                margin: 0,
+                color: '#fff',
+                fontSize: '28px',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #fff 0%, #a8b2d1 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                📊 Your Performance Dashboard
+              </h2>
+              <button
+                onClick={closePerformanceModal}
+                style={{
+                  background: 'rgba(231, 76, 60, 0.15)',
+                  color: '#e74c3c',
+                  border: '1.5px solid rgba(231, 76, 60, 0.3)',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'rotate(90deg)'}
+                onMouseLeave={(e) => e.target.style.transform = 'rotate(0deg)'}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Loading State */}
+            {performanceLoading ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '60px 20px',
+                color: '#fff'
+              }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  border: '3px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '50%',
+                  borderTopColor: '#ff6b6b',
+                  animation: 'spin 1s ease-in-out infinite',
+                  marginBottom: '20px'
+                }}></div>
+                <h3>Loading your performance data...</h3>
+                <p style={{ opacity: 0.7 }}>Fetching latest analytics and insights</p>
+              </div>
+            ) : (
+              <div style={{ color: '#fff' }}>
+                {/* Performance Notifications */}
+                {notifications.length > 0 && (
+                  <div style={{
+                    marginBottom: "30px",
+                    padding: "20px",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "10px",
+                    backdropFilter: "blur(10px)"
+                  }}>
+                    <h3 style={{ color: "#fff", marginBottom: "15px" }}>📢 Performance Notifications</h3>
+                    {notifications.slice(0, 3).map((notif, index) => (
+                      <p key={index} style={{ margin: "8px 0", color: "#fff" }}>
+                        <strong>{notif.title}:</strong> {notif.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* AI Performance Insights */}
+                {aiPrediction && (
+                  <div style={{
+                    marginBottom: "30px",
+                    padding: "20px",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "10px",
+                    backdropFilter: "blur(10px)"
+                  }}>
+                    <h3 style={{ color: "#fff", marginBottom: "15px" }}>🤖 AI Performance Prediction</h3>
+                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "15px" }}>
+                      <div>
+                        <strong style={{ color: "#fff" }}>Predicted Score:</strong>
+                        <span style={{ color: "#4CAF50", fontSize: "1.2em", marginLeft: "10px" }}>{aiPrediction.predicted_score}%</span>
+                      </div>
+                      <div>
+                        <strong style={{ color: "#fff" }}>Confidence:</strong>
+                        <span style={{ color: "#2196F3", marginLeft: "10px" }}>{aiPrediction.confidence}%</span>
+                      </div>
+                      <div>
+                        <strong style={{ color: "#fff" }}>Trend:</strong>
+                        <span style={{
+                          color: aiPrediction.trend === "improving" ? "#4CAF50" : aiPrediction.trend === "declining" ? "#F44336" : "#FF9800",
+                          marginLeft: "10px"
+                        }}>{aiPrediction.trend}</span>
+                      </div>
+                    </div>
+                    {aiPrediction.suggestions.length > 0 && (
+                      <div>
+                        <strong style={{ color: "#fff" }}>AI Suggestions:</strong>
+                        <ul style={{ color: "#fff", marginTop: "10px" }}>
+                          {aiPrediction.suggestions.map((suggestion, index) => (
+                            <li key={index} style={{ margin: "5px 0" }}>{suggestion}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Recent Performance Records */}
+                {performanceData.length > 0 && (
+                  <div style={{ marginBottom: "30px" }}>
+                    <h3 style={{ color: "#fff", marginBottom: "20px" }}>📊 Recent Performance Records</h3>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                      gap: "15px"
+                    }}>
+                      {performanceData.slice(0, 8).map((record, index) => (
+                        <div key={index} style={{
+                          padding: "20px",
+                          backgroundColor: "rgba(255, 255, 255, 0.1)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "10px",
+                          backdropFilter: "blur(10px)",
+                          textAlign: "center"
+                        }}>
+                          <h4 style={{ margin: "0 0 10px", color: "#fff", fontSize: "1.1em" }}>
+                            {record.category === "subject" ? record.subcategory : record.category.replace("_", " ").toUpperCase()}
+                          </h4>
+                          <p style={{ margin: "0 0 10px", color: "#fff", fontSize: "2em", fontWeight: "bold" }}>{record.score}%</p>
+                          <p style={{
+                            margin: "0",
+                            color: record.calculated_level === "excellent" ? "#4CAF50" :
+                                   record.calculated_level === "average" ? "#FF9800" : "#F44336",
+                            fontWeight: "bold",
+                            fontSize: "1.1em"
+                          }}>{record.calculated_level?.toUpperCase()}</p>
+                          <p style={{ margin: "10px 0 0", color: "rgba(255, 255, 255, 0.7)", fontSize: "0.9em" }}>
+                            {new Date(record.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Improvement Suggestions */}
+                {aiSuggestions && aiSuggestions.suggestions.length > 0 && (
+                  <div style={{
+                    padding: "20px",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "10px",
+                    backdropFilter: "blur(10px)"
+                  }}>
+                    <h3 style={{ color: "#fff", marginBottom: "15px" }}>💡 AI Improvement Suggestions</h3>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                      gap: "15px"
+                    }}>
+                      {aiSuggestions.suggestions.map((suggestion, index) => (
+                        <div key={index} style={{
+                          padding: "15px",
+                          backgroundColor: "rgba(255, 255, 255, 0.05)",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)"
+                        }}>
+                          <p style={{ margin: 0, color: "#fff" }}>{suggestion}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

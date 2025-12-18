@@ -111,5 +111,10 @@ async def admin_login(data: UserLogin):
 
     # Create token
     token = create_access_token({"user_id": str(user["_id"]), "role": user["role"]})
-    
-    return {"access_token": token, "role": "admin"}
+
+    return {
+        "access_token": token,
+        "role": "admin",
+        "user_id": str(user["_id"]),
+        "name": user.get("name", "Admin")
+    }

@@ -72,6 +72,8 @@ export default function StudentAuth({ onClose }) {
         localStorage.clear();
         localStorage.setItem("token", res.data.token || res.data.access_token);
         localStorage.setItem("role", res.data.role || "student");
+        localStorage.setItem("userId", res.data.user_id);
+        localStorage.setItem("userName", res.data.name);
         handleClose();
         setTimeout(() => navigate("/"), 100);
       }

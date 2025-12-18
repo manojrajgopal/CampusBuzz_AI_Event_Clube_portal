@@ -299,19 +299,19 @@
 }
 
 /* Enhanced Cards Grid */
-.clubs-grid, .events-grid, .teachers-grid {
+.clubs-grid, .events-grid, .teachers-grid, .performance-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
 }
 
-.club-card, .event-card, .teacher-card, .application-card {
+.club-card, .event-card, .teacher-card, .application-card, .performance-card {
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 24px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -319,7 +319,7 @@
   overflow: hidden;
 }
 
-.club-card::before, .event-card::before, .teacher-card::before, .application-card::before {
+.club-card::before, .event-card::before, .teacher-card::before, .application-card::before, .performance-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -329,9 +329,9 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
-.club-card:hover, .event-card:hover, .teacher-card:hover, .application-card:hover {
+.club-card:hover, .event-card:hover, .teacher-card:hover, .application-card:hover, .performance-card:hover {
   transform: translateY(-8px);
-  box-shadow: 
+  box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.15);
@@ -811,8 +811,82 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* Performance specific styles */
+.performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.performance-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.performance-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+}
+
+.performance-badge.excellent {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.performance-badge.average {
+  background: rgba(241, 196, 15, 0.15);
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+.performance-badge.low {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.performance-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metric:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-weight: 600;
+  opacity: 0.8;
+  color: #a8b2d1;
+  font-size: 14px;
+}
+
+.metric-value {
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+}
+
 /* Loading animation for cards */
-.club-card, .event-card, .teacher-card, .application-card {
+.club-card, .event-card, .teacher-card, .application-card, .performance-card {
   animation: cardSlideIn 0.6s ease-out;
 }
 
