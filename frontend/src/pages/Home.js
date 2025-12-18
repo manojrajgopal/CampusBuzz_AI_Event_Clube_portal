@@ -410,6 +410,108 @@ export default function Home() {
   const safeBlogs = Array.isArray(blogs) ? blogs : [];
   const safeClubs = Array.isArray(clubs) ? clubs : [];
 
+  const fallbackMedia = ["/images/Achivement.jpg", "/images/fashion.jpg", "/images/programming'.jpg", "/images/reporterBoy.png", "/images/song (1).mp4"];
+
+  const getRandomFallback = () => {
+    return fallbackMedia[Math.floor(Math.random() * fallbackMedia.length)];
+  };
+
+  const renderImage = (blog) => {
+    console.debug("[renderImage] called");
+    console.debug("[renderImage] blog object:", blog);
+
+    if (!blog.media) {
+      console.warn("[renderImage] blog.media is missing, using random fallback");
+      const fallbackUrl = getRandomFallback();
+      const isVideo = /\.(mp4|webm|ogg)$/i.test(fallbackUrl);
+
+      if (isVideo) {
+        return (
+          <div className="blog-media">
+            <video
+              controls
+              className="blog-video"
+              src={fallbackUrl}
+              onPlay={() => console.debug("[renderImage] Fallback video started playing")}
+              onPause={() => console.debug("[renderImage] Fallback video paused")}
+              onError={(e) => console.error("[renderImage] Fallback video error", e)}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        );
+      } else {
+        return (
+          <div className="blog-media">
+            <img
+              src={fallbackUrl}
+              alt="Blog media"
+              className="blog-image"
+              onLoad={() => console.debug("[renderImage] Fallback image loaded successfully")}
+              onError={(e) => console.error("[renderImage] Fallback image failed to load", e)}
+            />
+          </div>
+        );
+      }
+    }
+
+    const mediaUrl = blog.media;
+    console.debug("[renderImage] mediaUrl:", mediaUrl);
+
+    const isVideo =
+      /\.(mp4|webm|ogg)$/i.test(mediaUrl) ||
+      mediaUrl.includes("youtube.com") ||
+      mediaUrl.includes("vimeo.com") ||
+      blog.mediaType === "video";
+
+    console.debug("[renderImage] blog.mediaType:", blog.mediaType);
+    console.debug("[renderImage] isVideo:", isVideo);
+
+    if (isVideo) {
+      console.debug("[renderImage] Rendering VIDEO");
+
+      return (
+        <div className="blog-media">
+          <video
+            controls
+            className="blog-video"
+            src={mediaUrl}
+            onPlay={() => console.debug("[renderImage] Video started playing")}
+            onPause={() => console.debug("[renderImage] Video paused")}
+            onError={(e) => console.error("[renderImage] Video error", e)}
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      );
+    } else {
+      console.debug("[renderImage] Rendering IMAGE");
+
+      const imageUrl =
+        blog.mediaType === "file"
+          ? `${API.defaults.baseURL}/uploads/blogs/${mediaUrl.split("/").pop()}`
+          : mediaUrl;
+
+      console.debug("[renderImage] Computed imageUrl:", imageUrl);
+
+      return (
+        <div className="blog-media">
+          <img
+            src={imageUrl}
+            alt={blog.title}
+            className="blog-image"
+            onLoad={() => {
+              console.debug("[renderImage] Image loaded successfully:", imageUrl);
+            }}
+            onError={(e) => {
+              console.error("[renderImage] Image failed to load", { failedUrl: imageUrl, event: e });
+            }}
+          />
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="home-page">
       {/* Three.js Background */}
@@ -559,17 +661,30 @@ export default function Home() {
             <div className="blogs-grid">
               {safeBlogs.map((blog) => (
                 <div key={blog._id} className="blog-card">
-                  <div className="blog-image">
-                    {blog.image ? (
-                      <img src={blog.image} alt="Blog" />
-                    ) : (
-                      <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Blog" />
-                    )}
-                  </div>
+                  {renderImage(blog)}
                   <div className="blog-content">
-                    <h3>{blog.title}</h3>
-                    <p>{blog.content?.substring(0, 100)}...</p>
-                    <Link to={`/blogs`} className="read-more">Read More →</Link>
+                    <div className="blog-header">
+                      <h3 className="blog-title">{blog.title}</h3>
+                    </div>
+                    <p className="blog-excerpt">
+                      {blog.content?.substring(0, 150)}
+                      {blog.content?.length > 150 ? "..." : ""}
+                    </p>
+                    <div className="blog-meta">
+                      {blog.author && <span className="blog-author">By {blog.author}</span>}
+                      {blog.created_at && (
+                        <span className="blog-date">
+                          {new Date(blog.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      )}
+                    </div>
+                    <div className="blog-footer">
+                      <Link to={`/blogs`} className="read-more">Read Full Story →</Link>
+                    </div>
                   </div>
                 </div>
               ))}
